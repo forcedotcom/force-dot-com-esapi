@@ -19,24 +19,41 @@
  */
 global class SFDCAccessController {
 	
-	/*
-		SharingMode - this enum defines the sharing mode to be used:
-			WITH - will use the class instance that enforces "with sharing"
-			WITHOUT -  will use the class instance that enforces "without sharing"
-			INHERIT - will use the class instance that just inherits from the class that calls this class
-		You can set the sharing mode in the constructor or later using the setSharingMode() method.
-		If you use the default constructor, we will set it to WITH 
-	*/
-	global enum SharingMode {WITH, WITHOUT, INHERIT}
+	/**
+	 * SharingMode - this enum defines the sharing mode to be used.
+	 * <br>
+	 * You can set the sharing mode in the constructor or later using the setSharingMode() method.
+	 * If you use the default constructor, we will set it to WITH.
+	 */
+	global enum SharingMode {
+		/**
+		 * Will use the class instance that enforces "with sharing".
+		 */
+		WITH, 
+		/**
+		 * Will use the class instance that enforces "without sharing".
+		 */
+		WITHOUT, 
+		/**
+		 * Will use the class instance that just inherits from the class that calls this class.
+		 */
+		INHERIT}
 
-	/*
-		OperationMode - this enum defines the DB operations mode to be used:
-			ALL_OR_NONE - will make sure all required fields have the proper permissions before any operation takes place
-			BEST_EFFORT - will only set fields that are allowed. Other fields will be omited from operation, but operation will continue.
-		You can set the operation mode in the constructor or later using the setOperatoinMode() method.
-		If you use the default constructor, we will set it to ALL_OR_NONE 
-	*/
-	global enum OperationMode {ALL_OR_NONE, BEST_EFFORT}
+	/**
+	 * OperationMode - this enum defines the DB operations mode to be used.
+	 * <br>
+	 * You can set the operation mode in the constructor or later using the setOperatoinMode() method.
+	 * If you use the default constructor, we will set it to ALL_OR_NONE.
+	 */
+	global enum OperationMode {
+		/**
+		 * Will make sure all required fields have the proper permissions before any operation takes place.
+		 */
+		ALL_OR_NONE,
+		/**
+		 * Will only set fields that are allowed. Other fields will be omitted from operation, but operation will continue.
+		 */
+		BEST_EFFORT}
 	
 	global class AccessControlDmlException extends Exception {}
 	
@@ -97,7 +114,9 @@ global class SFDCAccessController {
 	private AccessControllerInheritSharing acis; // sharing access control object that was created with sharing inherited from caller
 	private SharingMode smode; // the current sharing mode of this instance. We will call the proper instance from the above three based on this value.
 	
-	/* default constructor - will set sharing mode to SharingMode.WITH and operation mode to OperationMode.ALL_OR_NONE */
+	/**
+	 * Default constructor - will set sharing mode to SharingMode.WITH and operation mode to OperationMode.ALL_OR_NONE
+	 */
 	global SFDCAccessController() {
 		// init the three access contorl instances to enforce sharing
 		acws = new AccessControllerWithSharing();
@@ -109,7 +128,9 @@ global class SFDCAccessController {
 		setOperationMode(OperationMode.ALL_OR_NONE); // defaults to all or none
 	}
 	
-	/* This constructor allows you to set the sharing mode and operation mode */
+	/**
+	 * This constructor allows you to set the sharing mode and operation mode
+	 */
 	global SFDCAccessController(SharingMode smode, OperationMode omode) {
 		this();
 		
@@ -128,7 +149,10 @@ global class SFDCAccessController {
 		else // we always enforce smode to be a valid value - so no need to check it here again if null or incorrect value
 			return acis;
 	}
-	
+
+	/**
+	 * Set the sharing mode to use when calling this modules methods.
+	 */
 	global void setSharingMode(SharingMode smode) {
 		if (smode == null)
 			throw new AccessControlDmlException('SharingMode must not be null');
@@ -139,6 +163,9 @@ global class SFDCAccessController {
 			throw new AccessControlDmlException('Invalid value for SharingMode');
 	}
 
+	/**
+	 * Set the operation mode to use when calling this modules methods.
+	 */
 	global void setOperationMode(OperationMode omode) {
 		/* set operation mode into instance objects. 
 		 * Note : sharing mode is set in the outter class, but this is set on the actual instance objects 
@@ -149,10 +176,11 @@ global class SFDCAccessController {
 		acis.setOperationMode(omode);
 	}	
 
-	/* Check to see if the user can create this object.
-	 * If he can, depending on the operation mode do the following:
-	 * 		BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.
-	 *		ALL_OR_NONE - if any of the fieldsToSet can't be created by the user, throw an exception.
+	/**
+	 * Insert the object with the context of the current user session.<br>
+	 * Depending on the operation mode do the following:<br>
+	 *    BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.<br>
+	 *    ALL_OR_NONE - if any of the fieldsToSet can't be created by the user, throw an exception.<br>
 	 * In addition throw an exception if the user does not have the CREATE permission on the object. 
 	 */
 	global void insertAsUser(SObject someObj, List<String> fieldsToSet) {
@@ -160,10 +188,11 @@ global class SFDCAccessController {
 		getACImpl().insertAsUser(someObj, fieldsToSet);
 	}	
 
-	/* Check to see if the user can update this object.
-	 * If he can, depending on the operation mode do the following:
-	 * 		BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.
-	 *		ALL_OR_NONE - if any of the fieldsToUpdate can't be updated by the user, throw an exception.
+	/**
+	 * Update the object with the context of the current user session.<br>
+	 * Depending on the operation mode do the following:<br>
+	 *    BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.<br>
+	 *    ALL_OR_NONE - if any of the fieldsToUpdate can't be updated by the user, throw an exception.<br>
 	 * In addition throw an exception if the user does not have the UPDATE permission on the object. 
 	 */
 	global void updateAsUser(SObject someObj, List<String> fieldsToUpdate) {
@@ -171,26 +200,30 @@ global class SFDCAccessController {
 		getACImpl().updateAsUser(someObj, fieldsToUpdate);
 	}
 
-	/* Check to see if the user can delete this object. Throw exception if not.
+	/** 
+	 * Delete the object with the context of the current user session. Throw exception if user can't delete this object.
 	 */
 	global void deleteAsUser(SObject someObj) {
 		// call deleteAsUser using specific instance based on current sharing mode
 		getACImpl().deleteAsUser(someObj);
 	}
 	
-	/* Return a list of sobject fields that are viewable by this user 
+	/**
+	 * Return a list of sobject fields that are viewable by the current user session. 
 	 */ 
 	public List<Schema.SObjectField> getViewableFields(SObject someObj) {
 		return getACImpl().getViewableFields(someObj);
 	}
         
-	/* Returns a list of sobject fields that are updateable by this user.
+	/**
+	 * Return a list of sobject fields that are updateable by the current user session. 
 	 */ 
 	public List<Schema.SObjectField> getUpdateableFields(SObject someObj) {
 		return getACImpl().getUpdateableFields(someObj);
 	}
     
-	/* Returns a list of sobject fields that are createable by this user.
+	/**
+	 * Returns a list of sobject fields that are createable by this user.
 	 */ 
 	public List<Schema.SObjectField> getCreatableFields(SObject someObj) {
 		return getACImpl().getCreatableFields(someObj);
