@@ -34,26 +34,41 @@ global with sharing class SFDCEncoder {
 	private static final String[] JSINHTML_DECODED = new String[] { '&', '\\', '\'', '"', '\r', '\n', '<', '>' };
 	private static final String[] JSINHTML_ENCODED = new String[] { '&amp;', '\\\\', '\\\'', '\\&quot;', '\\r', '\\n', '&lt;', '&gt;' };
 
-	// similar to the VisualForce HTMLENCODE function
+	/**
+	 * Similar to the VisualForce HTMLENCODE function.
+	 */
 	global String SFDC_HTMLENCODE(String input) {
 		return ENCODE(input, HTML_DECODED, HTML_ENCODED);
 	}
 
-	// similar to the VisualForce JSENCODE function
+	/**
+	 * Similar to the VisualForce JSENCODE function.
+	 */
 	global String SFDC_JSENCODE(String input) {
 		return ENCODE(input, JS_DECODED, JS_ENCODED);
 	}
 
-	// similar to the VisualForce JSINHTMLENCODE function
+	/**
+	 * Similar to the VisualForce JSINHTMLENCODE function.
+	 */
 	global String SFDC_JSINHTMLENCODE(String input) {
 		return ENCODE(input, JSINHTML_DECODED, JSINHTML_ENCODED);
 	}
 
-	/* Note : this function always encodes into UTF-8 URL encoding - if you need another enocoding type, use the second function which allows to set the encoding */
+	/**
+	 * Similar to the VisualForce URLENCODE function. <br><br>
+	 * 
+	 * Note : this function always encodes into UTF-8 URL encoding
+	 *  - if you need another encoding type,
+	 *  use the second function which allows to set the encoding 
+	 **/
 	global String SFDC_URLENCODE(String input) {
 		return EncodingUtil.urlEncode(input, 'UTF-8');
 	}
 	
+	/**
+	 * Similar to the VisualForce URLENCODE function but allows to set specific encoding type.
+	 **/
 	global String SFDC_URLENCODE(String input, String encoding) {
 		return EncodingUtil.urlEncode(input, encoding);
 	}
