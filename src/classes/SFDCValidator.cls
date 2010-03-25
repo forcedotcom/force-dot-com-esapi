@@ -15,7 +15,7 @@
  */
 
 /**
- * This class provides basci validation functionality for diferent types of input.
+ * This class provides basic validation functionality for diferent types of input.
  * Note : we don't do any decoding before the checks because that really depends on the context used.
  *   Instead, we enforce strict input validation on the input as is.
  * Note : we expose almost every function in this class in two forms isValid and getValid. They work 
