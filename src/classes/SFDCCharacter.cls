@@ -19,6 +19,12 @@
  * It uses two maps that link between the integer value and the string representation of each character.
  */
 global class SFDCCharacter {
+	
+	/**
+ 	* This is the SFDCInvalidCharacterException class. It does not add any functionality to the generic Exception class.
+ 	* However, in Apex we must extend the Exception class before using it. 
+ 	*/
+	public with sharing class SFDCInvalidCharacterException extends Exception{	}
 
 	private static final Map<String,Integer> strToInt = new Map<String,Integer>();
 	private static final Map<Integer,String> intToStr = new Map<Integer,String>();
