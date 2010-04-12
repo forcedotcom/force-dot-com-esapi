@@ -59,18 +59,18 @@ public with sharing class SFDCCreditCardValidationRule extends SFDCBaseValidatio
 	    if ( SFDCStringUtils.isEmpty(input) ) {
 			if (isAllowNull())
 				return;
-			throw new SFDCValidationException('Input credit card required');
+			throw new SFDCValidator.SFDCValidationException('Input credit card required');
 	    }
 	    
 	    try {
 	    	ccrule.assertValid(input);
 	    } catch (Exception e) {
 	    	// Card did not match the regex pattern or other basic string rule checks
-	    	throw new SFDCValidationException('Invalid credit card input');
+	    	throw new SFDCValidator.SFDCValidationException('Invalid credit card input');
 	    }
 
 		if( ! validCreditCardFormat(input)) {
-			throw new SFDCValidationException('Invalid credit card input');
+			throw new SFDCValidator.SFDCValidationException('Invalid credit card input');
 		}
 		
 		// all tests passed
