@@ -75,12 +75,11 @@ DETAIL:&nbsp;FIELD&nbsp;|&nbsp;CONSTR&nbsp;|&nbsp;<A HREF="#method_detail">METHO
 Class SFDCAccessControlException</H2>
 <PRE>
 Exception
-    <IMG SRC="./resources/inherit.gif" ALT="extended by "><A HREF="SFDCValidationException.html" title="class in &lt;Unnamed&gt;">SFDCValidationException</A>
-        <IMG SRC="./resources/inherit.gif" ALT="extended by "><B>SFDCAccessControlException</B>
+    <IMG SRC="./resources/inherit.gif" ALT="extended by "><B>SFDCAccessControlException</B>
 </PRE>
 <HR>
 <DL>
-<DT><PRE>public class <B>SFDCAccessControlException</B><DT>extends <A HREF="SFDCValidationException.html" title="class in &lt;Unnamed&gt;">SFDCValidationException</A></DL>
+<DT><PRE>public class <B>SFDCAccessControlException</B><DT></DL>
 </PRE>
 
 <P>
@@ -104,16 +103,38 @@ This class provides access control exception functionality. You might not want t
 <TD><CODE><B><A HREF="SFDCAccessControlException.ExceptionReason.html" title="enum in &lt;Unnamed&gt;">SFDCAccessControlException.ExceptionReason</A></B></CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ExceptionReason - this enum defines the different reasons for the exception type.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD><CODE><B><A HREF="SFDCAccessControlException.ExceptionType.html" title="enum in &lt;Unnamed&gt;">SFDCAccessControlException.ExceptionType</A></B></CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ExceptionType - this enum defines the different types of Access Control exceptions.</TD>
 </TR>
 </TABLE>
 &nbsp;
+
+<!-- ======== CONSTRUCTOR SUMMARY ======== -->
+
+<A NAME="constructor_summary"><!-- --></A>
+<TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+<TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
+<TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
+<B>Constructor Summary</B></FONT></TH>
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD><CODE><B><A HREF="SFDCAccessControlException.html#SFDCAccessControlException(String, SFDCAccessControlException.ExceptionType, SFDCAccessControlException.ExceptionReason, String, String)">SFDCAccessControlException</A></B>(String&nbsp;eText,
+                           <A HREF="SFDCAccessControlException.ExceptionType.html" title="enum in &lt;Unnamed&gt;">SFDCAccessControlException.ExceptionType</A>&nbsp;eType,
+                           <A HREF="SFDCAccessControlException.ExceptionReason.html" title="enum in &lt;Unnamed&gt;">SFDCAccessControlException.ExceptionReason</A>&nbsp;eReason,
+                           String&nbsp;eObject,
+                           String&nbsp;eField)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Constructor for SFDCAccessControlException.</TD>
+</TR>
+</TABLE>
+&nbsp;
+
 <!-- ========== METHOD SUMMARY =========== -->
 
 <A NAME="method_summary"><!-- --></A>
@@ -128,7 +149,7 @@ This class provides access control exception functionality. You might not want t
 <TD><CODE><B><A HREF="SFDCAccessControlException.html#getExceptionField()">getExceptionField</A></B>()</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Get the field on which the exception occurred.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
@@ -136,7 +157,7 @@ This class provides access control exception functionality. You might not want t
 <TD><CODE><B><A HREF="SFDCAccessControlException.html#getExceptionObject()">getExceptionObject</A></B>()</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Get the object on which the exception occurred.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
@@ -144,7 +165,7 @@ This class provides access control exception functionality. You might not want t
 <TD><CODE><B><A HREF="SFDCAccessControlException.html#getExceptionReason()">getExceptionReason</A></B>()</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Get the exception reason - no create, no update, etc.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
@@ -152,7 +173,7 @@ This class provides access control exception functionality. You might not want t
 <TD><CODE><B><A HREF="SFDCAccessControlException.html#getExceptionType()">getExceptionType</A></B>()</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Get the exception type - Object Access Violation, Field Access Violation, etc.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
@@ -160,11 +181,36 @@ This class provides access control exception functionality. You might not want t
 <TD><CODE><B><A HREF="SFDCAccessControlException.html#getText()">getText</A></B>()</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Get the error text.</TD>
 </TR>
 </TABLE>
 <br>
 <P>
+
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
+
+<A NAME="constructor_detail"><!-- --></A>
+<TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+<TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
+<TH ALIGN="left" COLSPAN="1"><FONT SIZE="+2">
+<B>Constructor Detail</B></FONT></TH>
+</TR>
+</TABLE>
+
+<A NAME="SFDCAccessControlException(String, SFDCAccessControlException.ExceptionType, SFDCAccessControlException.ExceptionReason, String, String)"><!-- --></A><H3>
+SFDCAccessControlException</H3>
+<PRE>
+public <B>SFDCAccessControlException</B>(String&nbsp;eText,
+                                  <A HREF="SFDCAccessControlException.ExceptionType.html" title="enum in &lt;Unnamed&gt;">SFDCAccessControlException.ExceptionType</A>&nbsp;eType,
+                                  <A HREF="SFDCAccessControlException.ExceptionReason.html" title="enum in &lt;Unnamed&gt;">SFDCAccessControlException.ExceptionReason</A>&nbsp;eReason,
+                                  String&nbsp;eObject,
+                                  String&nbsp;eField)</PRE>
+<DL>
+<DD>Constructor for SFDCAccessControlException.
+<P>
+<DL>
+<DT><B>Parameters:</B><DD><CODE>eText</CODE> - Error text<DD><CODE>eType</CODE> - ExceptionType for this error<DD><CODE>eReason</CODE> - ExceptionReason for this error<DD><CODE>eObject</CODE> - The object name this error was triggered on<DD><CODE>eField</CODE> - The field name this error was triggered on</DL>
+</DL>
 
 <!-- ============ METHOD DETAIL ========== -->
 
@@ -181,6 +227,10 @@ getExceptionType</H3>
 <PRE>
 public <A HREF="SFDCAccessControlException.ExceptionType.html" title="enum in &lt;Unnamed&gt;">SFDCAccessControlException.ExceptionType</A> <B>getExceptionType</B>()</PRE>
 <DL>
+<DD>Get the exception type - Object Access Violation, Field Access Violation, etc.
+ You might not want to expose the details of the exception to the users.
+ Note : to avoid XSS, make sure to escape text before presenting it to the user.
+<P>
 <DD><DL>
 </DL>
 </DD>
@@ -192,6 +242,10 @@ getExceptionReason</H3>
 <PRE>
 public <A HREF="SFDCAccessControlException.ExceptionReason.html" title="enum in &lt;Unnamed&gt;">SFDCAccessControlException.ExceptionReason</A> <B>getExceptionReason</B>()</PRE>
 <DL>
+<DD>Get the exception reason - no create, no update, etc.
+ You might not want to expose the details of the exception to the users.
+ Note : to avoid XSS, make sure to escape text before presenting it to the user.
+<P>
 <DD><DL>
 </DL>
 </DD>
@@ -203,6 +257,10 @@ getExceptionObject</H3>
 <PRE>
 public String <B>getExceptionObject</B>()</PRE>
 <DL>
+<DD>Get the object on which the exception occurred.
+ You might not want to expose the details of the exception to the users.
+ Note : to avoid XSS, make sure to escape text before presenting it to the user.
+<P>
 <DD><DL>
 </DL>
 </DD>
@@ -214,6 +272,10 @@ getExceptionField</H3>
 <PRE>
 public String <B>getExceptionField</B>()</PRE>
 <DL>
+<DD>Get the field on which the exception occurred.
+ You might not want to expose the details of the exception to the users.
+ Note : to avoid XSS, make sure to escape text before presenting it to the user.
+<P>
 <DD><DL>
 </DL>
 </DD>
@@ -225,6 +287,10 @@ getText</H3>
 <PRE>
 public String <B>getText</B>()</PRE>
 <DL>
+<DD>Get the error text.
+ You might not want to expose the details of the exception to the users.
+ Note : to avoid XSS, make sure to escape text before presenting it to the user.
+<P>
 <DD><DL>
 </DL>
 </DD>
