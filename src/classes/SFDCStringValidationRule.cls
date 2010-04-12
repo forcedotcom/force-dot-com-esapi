@@ -39,12 +39,12 @@ global with sharing class SFDCStringValidationRule extends SFDCBaseValidationRul
      */
     public void addWhitelistPattern( String p ) {
          if (p == null) {
-             throw new SFDCValidationException('Pattern cannot be null');
+             throw new SFDCValidator.SFDCValidationException('Pattern cannot be null');
          }
         try {
             whitelistPatterns.add( Pattern.compile( p ) );
         } catch( Exception e ) {
-            throw new SFDCValidationException( 'Validation misconfiguration, problem with specified pattern');
+            throw new SFDCValidator.SFDCValidationException( 'Validation misconfiguration, problem with specified pattern');
         }
     }
     
@@ -54,7 +54,7 @@ global with sharing class SFDCStringValidationRule extends SFDCBaseValidationRul
      */
     public void addWhitelistPattern( Pattern p ) {
         if (p == null) {
-           throw new SFDCValidationException('Pattern cannot be null');
+           throw new SFDCValidator.SFDCValidationException('Pattern cannot be null');
         }
         whitelistPatterns.add( p );
     }
@@ -64,12 +64,12 @@ global with sharing class SFDCStringValidationRule extends SFDCBaseValidationRul
      */
     public void addBlacklistPattern( String p ) {
          if (p == null) {
-             throw new SFDCValidationException('Pattern cannot be null');
+             throw new SFDCValidator.SFDCValidationException('Pattern cannot be null');
          }
         try {
             blacklistPatterns.add( Pattern.compile( p ) );
         } catch( Exception e ) {
-            throw new SFDCValidationException( 'Validation misconfiguration, problem with specified pattern');
+            throw new SFDCValidator.SFDCValidationException( 'Validation misconfiguration, problem with specified pattern');
         }
     }
 
@@ -78,7 +78,7 @@ global with sharing class SFDCStringValidationRule extends SFDCBaseValidationRul
      */
     public void addBlacklistPattern( Pattern p ) {
          if (p == null) {
-             throw new SFDCValidationException('Pattern cannot be null');
+             throw new SFDCValidator.SFDCValidationException('Pattern cannot be null');
          }
         blacklistPatterns.add( p );
     }
@@ -105,30 +105,30 @@ global with sharing class SFDCStringValidationRule extends SFDCBaseValidationRul
         if ( SFDCStringUtils.isEmpty(input) ) {
             if (isAllowNull())
                 return;
-            throw new SFDCValidationException('SFDCStringValidationRule - Input required');
+            throw new SFDCValidator.SFDCValidationException('SFDCStringValidationRule - Input required');
         }
         
         // check length
         if (input.length() < minLength) {
-        	throw new SFDCValidationException('SFDCStringValidationRule - Input is too short');
+        	throw new SFDCValidator.SFDCValidationException('SFDCStringValidationRule - Input is too short');
         }
 
         if (input.length() > maxLength) {
-        	throw new SFDCValidationException('SFDCStringValidationRule - Input is too long');
+        	throw new SFDCValidator.SFDCValidationException('SFDCStringValidationRule - Input is too long');
         }
         
         // check whitelist patterns - the input must match each white list pattern
         // TODO - should we change this so it is ok if matches one? 
         for (Pattern p : whitelistPatterns) {
             if ( !p.matcher(input).matches() ) {
-                throw new SFDCValidationException('SFDCStringValidationRule - Invalid input, please conform to pattern.');
+                throw new SFDCValidator.SFDCValidationException('SFDCStringValidationRule - Invalid input, please conform to pattern.');
             }
         }
         
         // check blacklist patterns - fail if it matches any of the patterns
         for (Pattern p : blacklistPatterns) {
             if ( p.matcher(input).matches() ) {
-            	throw new SFDCValidationException('SFDCStringValidationRule - Invalid input, dangerous input matching detected.');
+            	throw new SFDCValidator.SFDCValidationException('SFDCStringValidationRule - Invalid input, dangerous input matching detected.');
             }
         }
         

@@ -42,7 +42,7 @@ global with sharing class SFDCNumberValidationRule extends SFDCBaseValidationRul
 		super(typeName);
 		
 		if (minValue > maxValue)
-			throw new SFDCValidationException('maxValue must be larger than minValue');
+			throw new SFDCValidator.SFDCValidationException('maxValue must be larger than minValue');
 		
 		this.minValue = minValue;
 		this.maxValue = maxValue;
@@ -75,7 +75,7 @@ global with sharing class SFDCNumberValidationRule extends SFDCBaseValidationRul
 			if (isAllowNull()) {
 				return null;
 			}
-			throw new SFDCValidationException('Input number required');
+			throw new SFDCValidator.SFDCValidationException('Input number required');
 	    }
 	    
 	    // make sure string contains only valid double characters using regex
@@ -83,7 +83,7 @@ global with sharing class SFDCNumberValidationRule extends SFDCBaseValidationRul
 	    	svrule.assertValid(input);
 	    } catch (Exception e) {
 	    	// String did not match the regex pattern or other basic string rule checks
-	    	throw new SFDCValidationException('Invalid number input');
+	    	throw new SFDCValidator.SFDCValidationException('Invalid number input');
 	    }
 	    
 		// RegEx is ok , so try to convert string to double
@@ -91,15 +91,15 @@ global with sharing class SFDCNumberValidationRule extends SFDCBaseValidationRul
 		try {
 			d = Double.valueOf(input);
 		} catch (Exception e) {
-			throw new SFDCValidationException('Invalid number input');
+			throw new SFDCValidator.SFDCValidationException('Invalid number input');
 		}
-
+		
 		// validate min and max
 		if (d < minValue) {
-			throw new SFDCValidationException('Invalid number input must be between ' + minValue + ' and ' + maxValue);
+			throw new SFDCValidator.SFDCValidationException('Invalid number input must be between ' + minValue + ' and ' + maxValue);
 		}
 		if (d > maxValue) {
-			throw new SFDCValidationException('Invalid number input must be between ' + minValue + ' and ' + maxValue);
+			throw new SFDCValidator.SFDCValidationException('Invalid number input must be between ' + minValue + ' and ' + maxValue);
 		}			
 		return d;
 	}

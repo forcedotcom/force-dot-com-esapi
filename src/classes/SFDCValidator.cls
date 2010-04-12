@@ -15,15 +15,22 @@
  */
 
 /**
- * This class provides basic validation functionality for different types of input.
+ * This class provides basic validation functionality for different types of input.<br>
  * Note : we don't do any decoding before the checks because that really depends on the context used.
- *   Instead, we enforce strict input validation on the input as is.
+ *   Instead, we enforce strict input validation on the input as is.<br>
  * Note : we expose almost every function in this class in two forms isValid and getValid. They work 
  *   the same way internally. The only difference is that, the isValid will call the getValid internally, 
  *   catch any exceptions, and return false in that case. So you can use which ever you prefer, it is
  *   only a style preference. the GetValid will always return the exact string as the input. 
  */
 global with sharing class SFDCValidator {
+
+	/**
+	 * This is a basic SFDCValidationException class. It does not add any functionality to the generic Exception class.
+	 * However, in Apex we must extend the Exception class before using it. 
+	 */
+	global with sharing virtual class SFDCValidationException extends Exception {
+	}
 
 	/**
 	 * Calls getValidCreditCard and returns true if no exceptions are thrown. 

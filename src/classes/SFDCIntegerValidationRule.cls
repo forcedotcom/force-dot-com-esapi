@@ -42,7 +42,7 @@ global with sharing class SFDCIntegerValidationRule extends SFDCBaseValidationRu
 		super(typeName);
 		
 		if (minValue > maxValue)
-			throw new SFDCValidationException('maxValue must be larger than minValue');
+			throw new SFDCValidator.SFDCValidationException('maxValue must be larger than minValue');
 		
 		this.minValue = minValue;
 		this.maxValue = maxValue;
@@ -75,7 +75,7 @@ global with sharing class SFDCIntegerValidationRule extends SFDCBaseValidationRu
 			if (isAllowNull()) {
 				return null;
 			}
-			throw new SFDCValidationException('Input integer required');
+			throw new SFDCValidator.SFDCValidationException('Input integer required');
 	    }
 	    
 	    // make sure string contains only valid integer characters using regex
@@ -83,7 +83,7 @@ global with sharing class SFDCIntegerValidationRule extends SFDCBaseValidationRu
 	    	svrule.assertValid(input);
 	    } catch (Exception e) {
 	    	// String did not match the regex pattern or other basic string rule checks
-	    	throw new SFDCValidationException('Invalid integer input');
+	    	throw new SFDCValidator.SFDCValidationException('Invalid integer input');
 	    }
 	    
 		// RegEx is ok , so try to convert string to integer
@@ -91,15 +91,15 @@ global with sharing class SFDCIntegerValidationRule extends SFDCBaseValidationRu
 		try {
 			i = Integer.valueOf(input);
 		} catch (Exception e) {
-			throw new SFDCValidationException('Invalid integer input format');
+			throw new SFDCValidator.SFDCValidationException('Invalid integer input format');
 		}
 		
 		// validate min and max
 		if (i < minValue) {
-			throw new SFDCValidationException('Invalid integer input must be between ' + minValue + ' and ' + maxValue);
+			throw new SFDCValidator.SFDCValidationException('Invalid integer input must be between ' + minValue + ' and ' + maxValue);
 		}
 		if (i > maxValue) {
-			throw new SFDCValidationException('Invalid integer input must be between ' + minValue + ' and ' + maxValue);
+			throw new SFDCValidator.SFDCValidationException('Invalid integer input must be between ' + minValue + ' and ' + maxValue);
 		}
 					
 		return i;
