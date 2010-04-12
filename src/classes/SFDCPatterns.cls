@@ -135,7 +135,8 @@ global with sharing class SFDCPatterns {
 	/**
 	 * Integer. Any valid integer string.  
 	 */
-	global static final String IntegerStr = '^([+-]?\\d+)$';	
+	global static final String IntegerStr = '^([+-]?\\d+)$';
+	
 	// this inner class is used for connecting a pattern name to a pattern string
 	// I use it for testing only
 	/*
