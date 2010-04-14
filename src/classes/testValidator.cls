@@ -850,13 +850,6 @@ private class testValidator {
         redirectDefaultDomainTests.add(new RedirectDefaultDomainTest('/javascript%3Atest', 'Valid #14', true));
         redirectDefaultDomainTests.add(new RedirectDefaultDomainTest('/http%3A//na1.salesforce.com', 'Valid #15', true));
         redirectDefaultDomainTests.add(new RedirectDefaultDomainTest('/http%3a//www.google.com', 'Valid #16', true));
-        /* This seems to be causing a stack overflow - don't check it now
-        redirectDefaultDomainTests.add(new RedirectDefaultDomainTest('http://na7.salesforce.com/'
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789', 'Valid #17', true));
-            */
         redirectDefaultDomainTests.add(new RedirectDefaultDomainTest('https://c.na7.salesforce.com/', 'Valid #18', true));
         redirectDefaultDomainTests.add(new RedirectDefaultDomainTest('https://sdfgdfgfsdg.c.na7.salesforce.com/', 'Valid #19', true));
         redirectDefaultDomainTests.add(new RedirectDefaultDomainTest('/%D7%A9', 'Valid #20', true));
@@ -900,19 +893,7 @@ private class testValidator {
             System.assertEquals(t.expectedResult, ESAPI.validator().SFDC_isValidRedirectLocation(t.inputStr), t.errText);
         }
     }
-    /*
-    static testMethod void testStackOverflow() {
-        String input = ''
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789';
-
-        Pattern p = Pattern.compile('^([a-zA-Z0-9\\.\\&\\+\\/\\=\\?\\#\\\\]|%([0-9A-Fa-f]{2}))*$');
-        p.matcher(input).matches();
-    }
-    */
+    
     static testMethod void testValidatorGetValidRedirectDefaultDomain() {
         PageReference pr = new PageReference('https://c.na7.salesforce.com');
         pr.getHeaders().put('Host', 'c.na7.salesforce.com');
@@ -963,13 +944,6 @@ private class testValidator {
         redirectTests.add(new RedirectTest('/javascript%3Atest', 'na7.salesforce.com', 'Valid #12', true));
         redirectTests.add(new RedirectTest('/http%3A//na1.salesforce.com', 'na7.salesforce.com', 'Valid #13', true));
         redirectTests.add(new RedirectTest('/http%3a//www.google.com', 'na7.salesforce.com', 'Valid #14', true));
-        /* This seems to be causing a stack overflow - don't check it now
-        redirectTests.add(new RedirectTest('http://na7.salesforce.com/'
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
-            + '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789', 'na7.salesforce.com', 'Valid #15', true));
-            */
         redirectTests.add(new RedirectTest('https://c.na7.salesforce.com/', 'c.na7.salesforce.com', 'Valid #16', true));
         redirectTests.add(new RedirectTest('https://sdfgdfgfsdg.c.na7.salesforce.com/', 'sdfgdfgfsdg.c.na7.salesforce.com', 'Valid #17', true));
         redirectTests.add(new RedirectTest('/%D7%A9', 'na7.salesforce.com', 'Valid #18', true));
