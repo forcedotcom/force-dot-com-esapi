@@ -15,9 +15,9 @@
  */
 
 /**
- * This class provides basic validation functionality for different types of input.<br>
+ * This class provides basic validation functionality for different types of input. <br>
  * Note : we don't do any decoding before the checks because that really depends on the context used.
- *   Instead, we enforce strict input validation on the input as is.<br>
+ *   Instead, we enforce strict input validation on the input as is. <br>
  * Note : we expose almost every function in this class in two forms isValid and getValid. They work 
  *   the same way internally. The only difference is that, the isValid will call the getValid internally, 
  *   catch any exceptions, and return false in that case. So you can use which ever you prefer, it is
@@ -33,7 +33,13 @@ global with sharing class SFDCValidator {
 	}
 
 	/**
-	 * Calls getValidCreditCard and returns true if no exceptions are thrown. 
+	 * Calls getValidCreditCard and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().isValidCreditCard(unsafe_text, false) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean isValidCreditCard(String input, Boolean allowNull) {
 		try {
@@ -46,7 +52,16 @@ global with sharing class SFDCValidator {
 	
 	/**
 	 * Returns the exact original input if all tests passed. Invalid input
-	 * will generate an exception. This function will only validate Visa and MasterCard 16 digits credit cards.
+	 * will generate an exception. This function will only validate Visa and MasterCard 16 digits credit cards. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     creditcard = ESAPI.validator().getValidCreditCard(unsafe_text, false);
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 * 
 	 * @param input 
 	 * 		The actual user input data to validate.
@@ -65,7 +80,13 @@ global with sharing class SFDCValidator {
 	}
 	
 	/**
-	 * Calls SFDC_getValidDate and returns true if no exceptions are thrown. 
+	 * Calls SFDC_getValidDate and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().SFDC_isValidDate(unsafe_text, SFDCPatterns.Date1, false) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean SFDC_isValidDate(String input, String format, Boolean allowNull) {
 		try {
@@ -78,7 +99,16 @@ global with sharing class SFDCValidator {
 
 	/**
 	 * Returns the original input if it is a valid date. Invalid input will generate a descriptive exception.
-	 * Uses RegEx patterns because Apex does not allow the user to choose which format he is going to use when setting the date/datetime objects.
+	 * Uses RegEx patterns because Apex does not allow the user to choose which format he is going to use when setting the date/datetime objects. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     datestr = ESAPI.validator().SFDC_getValidDate(unsafe_text, SFDCPatterns.Date1, false);
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 * 
 	 * @param input 
 	 * 		The actual user input data to validate.
@@ -116,7 +146,13 @@ global with sharing class SFDCValidator {
 	}
 
 	/**
-	 * Calls getValidDouble and returns true if no exceptions are thrown. 
+	 * Calls getValidDouble and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().isValidDouble(unsafe_text, 1.0, 2.0, false) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean isValidDouble(String input, Double minValue, Double maxValue, Boolean allowNull) {
         try {
@@ -129,7 +165,16 @@ global with sharing class SFDCValidator {
 
 	/**
 	 * Returns a validated real number as a double. Invalid input
-	 * will generate an exception. 
+	 * will generate an exception. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Double dblValue = ESAPI.validator().getValidDouble(unsafe_text, 1.0, 2.0, false);
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 * 
      * @param input 
      * 		The actual input data to validate.
@@ -151,7 +196,13 @@ global with sharing class SFDCValidator {
 	}
 	
 	/**
-	 * Calls getValidInteger and returns true if no exceptions are thrown. 
+	 * Calls getValidInteger and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().isValidInteger(unsafe_text, 1, 5, false) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean isValidInteger(String input, Integer minValue, Integer maxValue, Boolean allowNull) {
 		try {
@@ -164,7 +215,16 @@ global with sharing class SFDCValidator {
 	
 	/**
 	 * Returns a validated integer. Invalid input
-	 * will generate an exception. 
+	 * will generate an exception. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Integer intValue = ESAPI.validator().getValidInteger(unsafe_text, 1, 5, false);
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 * 
      * @param input 
      * 		The actual input data to validate.
@@ -186,7 +246,13 @@ global with sharing class SFDCValidator {
 	}
 	
 	/**
-	 * Calls getValidNumber and returns true if no exceptions are thrown. 
+	 * Calls getValidNumber and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().isValidNumber(unsafe_text, 0, 5000000, false) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean isValidNumber(String input, Long minValue, Long maxValue, Boolean allowNull) {
 		try {
@@ -199,7 +265,16 @@ global with sharing class SFDCValidator {
 	
 	/**
 	 * Returns a validated number as a double within the range of minValue to maxValue. Invalid input
-	 * will generate an exception. (This function accepts minValue and maxValue as Long vs. Integer in the getValidDouble)
+	 * will generate an exception. (This function accepts minValue and maxValue as Long vs. Double in the getValidDouble) <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Double dblValue = ESAPI.validator().getValidNumber(unsafe_text, 0, 5000000, false);
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 * 
      * @param input 
      * 		The actual input data to validate.
@@ -219,7 +294,13 @@ global with sharing class SFDCValidator {
 	}
 	
 	/**
-	 * Calls getValidListItem and returns true if no exceptions are thrown. 
+	 * Calls getValidListItem and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().isValidListItem(unsafe_text, new Set&lt;String&gt;{'US', 'CANADA'}) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean isValidListItem(String input, Set<String> validItems) {
 		try {
@@ -232,7 +313,16 @@ global with sharing class SFDCValidator {
 
 	/**
 	 * Confirm that the input is in the validItems list. Invalid or non-matching input
-	 * will generate an exception. 
+	 * will generate an exception. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     listItemStr = ESAPI.validator().getValidListItem(unsafe_text, new Set&lt;String&gt;{'US', 'CANADA'});
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 * 
 	 * @param input 
 	 * 		The value to search 'validItems' for.
@@ -250,7 +340,13 @@ global with sharing class SFDCValidator {
 	}
 	
 	/**
-	 * Calls getValidFileContent and returns true if no exceptions are thrown. 
+	 * Calls getValidFileContent and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().isValidFileContent(unsafe_text, 255, false) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean isValidFileContent(String input, Integer maxBytes, Boolean allowNull) {
 		try {
@@ -263,7 +359,16 @@ global with sharing class SFDCValidator {
 
 	/**
 	 * Returns the validated file content as a String. This is a good place to check for max file size, allowed character sets, and do virus scans.  Invalid input
-	 * will generate an exception. The default implementation only checks max size, and null.
+	 * will generate an exception. The default implementation only checks max size, and null. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     fileContentStr = ESAPI.validator().getValidFileContent(unsafe_text, 255, false);
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 * 
 	 * @param input 
 	 * 		The actual input data to validate.
@@ -290,7 +395,13 @@ global with sharing class SFDCValidator {
 	}
 	
 	/**
-	 * Calls getValidPrintable and returns true if no exceptions are thrown. 
+	 * Calls getValidPrintable and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().isValidPrintable(unsafe_text, 255, false) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean isValidPrintable(String input, Integer maxLength, Boolean allowNull) {
 		try {
@@ -302,7 +413,16 @@ global with sharing class SFDCValidator {
 	}
 	
 	/**
-	 * Returns the input after validating it contain only printable characters. Invalid input will generate an exception.
+	 * Returns the input after validating it contain only printable characters. Invalid input will generate an exception. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     printableStr = ESAPI.validator().getValidPrintable(unsafe_text, 255, false);
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 * 
 	 *  @param input 
 	 *  		data to be verified as printable characters
@@ -344,14 +464,26 @@ global with sharing class SFDCValidator {
 	}
 	
 	/**
-	 * Calls SFDC_getValidFileName with the default list of allowedExtensions
+	 * Calls SFDC_getValidFileName with the default list of allowedExtensions. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().SFDC_isValidFileName(unsafe_text, false) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean SFDC_isValidFileName(String input, Boolean allowNull) {
 		return SFDC_isValidFileName(input, SFDCEncoderConstants.VALID_FILE_EXTENSIONS, allowNull);
 	}
 	
 	/**
-	 * Calls SFDC_getValidFileName and returns true if no exceptions are thrown. 
+	 * Calls SFDC_getValidFileName and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().SFDC_isValidFileName(unsafe_text, new List&lt;String&gt;{'.png', '.jpg', '.bmp'}, false) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean SFDC_isValidFileName(String input, List<String> allowedExtensions, Boolean allowNull) {
 		try {
@@ -363,7 +495,16 @@ global with sharing class SFDCValidator {
 	}
 	
 	/**
-	 * Calls SFDC_getValidFileName with the default list of allowedExtensions
+	 * Calls SFDC_getValidFileName with the default list of allowedExtensions. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     fileNameStr = ESAPI.validator().SFDC_getValidFileName(unsafe_text, false);
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 */
 	global String SFDC_getValidFileName(String input, Boolean allowNull) {
 		return SFDC_getValidFileName(input, SFDCEncoderConstants.VALID_FILE_EXTENSIONS, allowNull);
@@ -371,12 +512,21 @@ global with sharing class SFDCValidator {
 	
 	/**
 	 * Returns the input string after validating it as a valid file name. Implementors should check for allowed file extensions here, as well as allowed file name characters. Invalid input
-	 * will generate an exception. Apex does not have a File object so we could not use it to verify the canonical file name. Instead we just used a RegEx pattern. 
+	 * will generate an exception. Apex does not have a File object so we could not use it to verify the canonical file name. Instead we just used a RegEx pattern. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     fileNameStr = ESAPI.validator().SFDC_getValidFileName(unsafe_text, new List&lt;String&gt;{'.png', '.jpg', '.bmp'}, false);
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE> 
 	 * 
      * @param input 
      * 		The actual input data to validate.
      * @param allowedExtensions 
-     * 		The extensiones you want to allow for the input file name. This is case insensitive.
+     * 		The extensions you want to allow for the input file name. This is case insensitive.
      * @param allowNull 
      * 		If allowNull is true then an input that is NULL or an empty string will be legal. If allowNull is false then NULL or an empty String will throw an exception.
      * 
@@ -419,7 +569,13 @@ global with sharing class SFDCValidator {
 	}
 	
 	/**
-	 * Calls SFDC_assertValidFileUpload using the default allowed file extensions and returns true if no exceptions are thrown. 
+	 * Calls SFDC_assertValidFileUpload using the default allowed file extensions and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().SFDC_isValidFileUpload(unsafe_fileName, unsafe_fileContent, 255, false) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean SFDC_isValidFileUpload(String filename, String content, Integer maxBytes, Boolean allowNull) {
 		try {
@@ -432,8 +588,18 @@ global with sharing class SFDCValidator {
 	
 	/**
 	 * Validates the filename, and content of a file. Invalid input
-	 * will generate an exception. Does not check file path because Salesforce does not have the notion of a file path.
-	 * This function internally just calls the SFDC_getValidFileName() and getValidFileContent() functions.
+	 * will generate an exception. Does not check file path because Force.com does not have the notion of a file path.
+	 * This function internally just calls the SFDC_getValidFileName() and getValidFileContent() functions. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     ESAPI.validator().SFDC_assertValidFileUpload(unsafe_fileName, unsafe_fileContent, 255,
+	 *         new List&lt;String&gt;{'.png', '.jpg', '.bmp'}, false);
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 * 
 	 * @param filename 
 	 * 		The filename of the uploaded file
@@ -454,7 +620,16 @@ global with sharing class SFDCValidator {
 	}
 	
 	/**
-	 * Calls assertValidHTTPRequestParameterSet and returns true if no exceptions are thrown. 
+	 * Calls assertValidHTTPRequestParameterSet and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().isValidHTTPRequestParameterSet(pageReference, 
+	 *         new Set&lt;String&gt;{'USER', 'PASSWORD'}, 
+	 *         new Set&lt;String&gt;{'GROUP', 'LANG'},
+	 *         255, false) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean isValidHTTPRequestParameterSet(PageReference request, Set<String> required, Set<String> optional) {
 		try {
@@ -467,7 +642,19 @@ global with sharing class SFDCValidator {
 
 	/**
 	 * Validates that the parameters in the current (PagReference) request contain all required parameters and only optional ones in
-	 * addition. Invalid input will generate an exception.
+	 * addition. Invalid input will generate an exception. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     ESAPI.validator().assertValidHTTPRequestParameterSet(pageReference, 
+	 *         new Set&lt;String&gt;{'USER', 'PASSWORD'}, 
+	 *         new Set&lt;String&gt;{'GROUP', 'LANG'},
+	 *         255, false);
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 * 
 	 * @param request 
 	 * 		A PageReference request object to validate
@@ -501,7 +688,13 @@ global with sharing class SFDCValidator {
 	}
 
 	/**
-	 * Calls SFDC_getValidRedirectLocation and returns true if no exceptions are thrown. 
+	 * Calls SFDC_getValidRedirectLocation and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().SFDC_isValidRedirectLocation(unsafe_text, 'www.mydomain.com') == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean SFDC_isValidRedirectLocation(String input, String currentDomain) {
 		
@@ -514,7 +707,13 @@ global with sharing class SFDCValidator {
 	}
 	
 	/**
-	 * Calls SFDC_getValidRedirectLocation and returns true if no exceptions are thrown. 
+	 * Calls SFDC_getValidRedirectLocation and returns true if no exceptions are thrown. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * if (ESAPI.validator().SFDC_isValidRedirectLocation(unsafe_text) == false)
+	 *     // error handling
+	 * </PRE>
 	 */
 	global Boolean SFDC_isValidRedirectLocation(String input) {
 		
@@ -527,7 +726,16 @@ global with sharing class SFDCValidator {
 	}
 
 	/**
-	 * Calls SFDC_getValidRedirectLocation while trying to get the current domain from ApexPages.currentPage(). 
+	 * Calls SFDC_getValidRedirectLocation while trying to get the current domain from ApexPages.currentPage(). <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     redirectStr = ESAPI.validator().SFDC_getValidRedirectLocation(unsafe_text);
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 */
 	global String SFDC_getValidRedirectLocation(String input) {
 		
@@ -555,7 +763,16 @@ global with sharing class SFDCValidator {
 	 * The default validation only allows redirects to *.salesforce.com, current domain, and relative URLs.
 	 * It also makes sure the URLs only allows http:// and https:// and is no longer than 512 characters long. <br><br>
 	 * 
-	 * Note : this implementation does not protect against directory traversal.
+	 * Note : this implementation does not protect against directory traversal. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     redirectStr = ESAPI.validator().SFDC_getValidRedirectLocation(unsafe_text, 'www.mydomain.com');
+	 * } catch () {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 * 
 	 *  @param input 
 	 *  		redirect location to be validated

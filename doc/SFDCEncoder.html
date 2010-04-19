@@ -150,7 +150,8 @@ This class is a basic encoder/escaper to help prevent some XSS attacks etc.
                String&nbsp;encoding)</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Similar to the VisualForce URLENCODE function but allows to set specific encoding type.</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Similar to <A HREF="SFDCEncoder.html#SFDC_URLENCODE(String)"><CODE>SFDC_URLENCODE</CODE></A>(String&nbsp;input) but 
+  allows to set specific encoding type.</TD>
 </TR>
 </TABLE>
 &nbsp;
@@ -188,7 +189,13 @@ SFDC_HTMLENCODE</H3>
 <PRE>
 public String <B>SFDC_HTMLENCODE</B>(String&nbsp;input)</PRE>
 <DL>
-<DD>Similar to the VisualForce HTMLENCODE function.
+<DD>Similar to the VisualForce HTMLENCODE function. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ //htmlstr is going to be sent to visualforce as html code
+ htmlstr = '&lt;div&gt;' + ESAPI.encoder().SFDC_HTMLENCODE(unsafe_text) + '&lt;/div&gt;';
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -201,7 +208,13 @@ SFDC_JSENCODE</H3>
 <PRE>
 public String <B>SFDC_JSENCODE</B>(String&nbsp;input)</PRE>
 <DL>
-<DD>Similar to the VisualForce JSENCODE function.
+<DD>Similar to the VisualForce JSENCODE function. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ //htmlstr is going to be sent to visualforce as html code
+ htmlstr = '&lt;script&gt; var str = "' + ESAPI.encoder().SFDC_JSENCODE(unsafe_text) + '";&lt;/script&gt;';
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -214,7 +227,13 @@ SFDC_JSINHTMLENCODE</H3>
 <PRE>
 public String <B>SFDC_JSINHTMLENCODE</B>(String&nbsp;input)</PRE>
 <DL>
-<DD>Similar to the VisualForce JSINHTMLENCODE function.
+<DD>Similar to the VisualForce JSINHTMLENCODE function. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ //htmlstr is going to be sent to visualforce as html code
+ htmlstr = '&lt;div onclick=\'alert("' + ESAPI.encoder().SFDC_JSINHTMLENCODE(unsafe_text) + '");\'&gt;some text&lt;/div&gt;';
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -229,9 +248,19 @@ public String <B>SFDC_URLENCODE</B>(String&nbsp;input)</PRE>
 <DL>
 <DD>Similar to the VisualForce URLENCODE function. <br><br>
  
- Note : this function always encodes into UTF-8 URL encoding
+ Note : This function always encodes into UTF-8 URL encoding
   - if you need another encoding type,
-  use the second function which allows to set the encoding
+  use the second function which allows to set the encoding. <br><br>
+  
+ Note : Even when using this function you should still not trust the input as a full 
+  URL because it may have JS or load data from other domains. this function just makes 
+  sure the input is encoded as proper URL. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ //htmlstr is going to be sent to visualforce as html code
+ htmlstr = '&lt;img src=\'http://domain/' + ESAPI.encoder().SFDC_URLENCODE(unsafe_text) + '\' /&gt;';
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -245,7 +274,14 @@ SFDC_URLENCODE</H3>
 public String <B>SFDC_URLENCODE</B>(String&nbsp;input,
                                        String&nbsp;encoding)</PRE>
 <DL>
-<DD>Similar to the VisualForce URLENCODE function but allows to set specific encoding type.
+<DD>Similar to <A HREF="SFDCEncoder.html#SFDC_URLENCODE(String)"><CODE>SFDC_URLENCODE</CODE></A>(String&nbsp;input) but 
+  allows to set specific encoding type. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ //htmlstr is going to be sent to visualforce as html code
+ htmlstr = '&lt;img src=\'http://domain/' + ESAPI.encoder().SFDC_URLENCODE(unsafe_text, 'ISO-8859-1') + '\' /&gt;';
+ </PRE>
 <P>
 <DD><DL>
 </DL>

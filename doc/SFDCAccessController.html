@@ -139,14 +139,23 @@ This class provides access control functionality to enforce CRUD/FLS and sharing
 <TD><CODE><B><A HREF="SFDCAccessController.html#SFDCAccessController()">SFDCAccessController</A></B>()</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Default constructor - will set sharing mode to SharingMode.WITH and operation mode to OperationMode.ALL_OR_NONE</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Default constructor - will set sharing mode to SharingMode.WITH, operation mode to OperationMode.ALL_OR_NONE, 
+  and array operation mode to OperationMode.ALL_OR_NONE.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD><CODE><B><A HREF="SFDCAccessController.html#SFDCAccessController(SFDCAccessController.SharingMode, SFDCAccessController.OperationMode)">SFDCAccessController</A></B>(<A HREF="SFDCAccessController.SharingMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.SharingMode</A>&nbsp;smode,
                      <A HREF="SFDCAccessController.OperationMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.OperationMode</A>&nbsp;omode)</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This constructor allows you to set the sharing mode and operation mode</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This constructor allows you to set the sharing mode and operation mode while using default for array operation mode.</TD>
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD><CODE><B><A HREF="SFDCAccessController.html#SFDCAccessController(SFDCAccessController.SharingMode, SFDCAccessController.OperationMode, SFDCAccessController.OperationMode)">SFDCAccessController</A></B>(<A HREF="SFDCAccessController.SharingMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.SharingMode</A>&nbsp;smode,
+                     <A HREF="SFDCAccessController.OperationMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.OperationMode</A>&nbsp;omode,
+                     <A HREF="SFDCAccessController.OperationMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.OperationMode</A>&nbsp;oarrmode)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This constructor allows you to set the sharing mode, operation mode, and array operation mode.</TD>
 </TR>
 </TABLE>
 &nbsp;
@@ -168,11 +177,19 @@ This class provides access control functionality to enforce CRUD/FLS and sharing
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;Database.DeleteResult[]</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#deleteAsUser(sObject[])">deleteAsUser</A></B>(sObject[]&nbsp;someObjs)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Delete the objects with the context of the current user session.
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
 <CODE>&nbsp;List&lt;Schema.SObjectField&gt;</CODE></FONT></TD>
 <TD><CODE><B><A HREF="SFDCAccessController.html#getCreatableFields(SObject)">getCreatableFields</A></B>(SObject&nbsp;someObj)</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a list of sobject fields that are createable by this user.</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a list of sobject fields that are createable by the current user session.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
@@ -197,11 +214,24 @@ This class provides access control functionality to enforce CRUD/FLS and sharing
              List&lt;String&gt;&nbsp;fieldsToSet)</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Insert the object with the context of the current user session.<br>
- Depending on the operation mode do the following:<br>
-    BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.<br>
-    ALL_OR_NONE - if any of the fieldsToSet can't be created by the user, throw an exception.<br>
- In addition throw an exception if the user does not have the CREATE permission on the object.</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Insert the object with the context of the current user session.
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;Database.SaveResult[]</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#insertAsUser(sObject[], List&lt;String&gt;)">insertAsUser</A></B>(sObject[]&nbsp;someObjs,
+             List&lt;String&gt;&nbsp;fieldsToSet)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Insert the objects with the context of the current user session.
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;void</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#setArrayOperationMode(SFDCAccessController.OperationMode)">setArrayOperationMode</A></B>(<A HREF="SFDCAccessController.OperationMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.OperationMode</A>&nbsp;oarrmode)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Set the array operation mode to use when calling this modules methods.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
@@ -226,11 +256,16 @@ This class provides access control functionality to enforce CRUD/FLS and sharing
              List&lt;String&gt;&nbsp;fieldsToUpdate)</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Update the object with the context of the current user session.<br>
- Depending on the operation mode do the following:<br>
-    BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.<br>
-    ALL_OR_NONE - if any of the fieldsToUpdate can't be updated by the user, throw an exception.<br>
- In addition throw an exception if the user does not have the UPDATE permission on the object.</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Update the object with the context of the current user session.
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;Database.SaveResult[]</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#updateAsUser(Map&lt;ID, sObject&gt;, List&lt;String&gt;)">updateAsUser</A></B>(Map&lt;ID, sObject&gt;&nbsp;objMap,
+             List&lt;String&gt;&nbsp;fieldsToUpdate)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Update the objects with the context of the current user session.
 </TR>
 </TABLE>
 &nbsp;
@@ -251,7 +286,8 @@ SFDCAccessController</H3>
 <PRE>
 public <B>SFDCAccessController</B>()</PRE>
 <DL>
-<DD>Default constructor - will set sharing mode to SharingMode.WITH and operation mode to OperationMode.ALL_OR_NONE
+<DD>Default constructor - will set sharing mode to SharingMode.WITH, operation mode to OperationMode.ALL_OR_NONE, 
+  and array operation mode to OperationMode.ALL_OR_NONE.
 <P>
 </DL>
 <HR>
@@ -262,7 +298,19 @@ SFDCAccessController</H3>
 public <B>SFDCAccessController</B>(<A HREF="SFDCAccessController.SharingMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.SharingMode</A>&nbsp;smode,
                             <A HREF="SFDCAccessController.OperationMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.OperationMode</A>&nbsp;omode)</PRE>
 <DL>
-<DD>This constructor allows you to set the sharing mode and operation mode
+<DD>This constructor allows you to set the sharing mode and operation mode while using default for array operation mode.
+<P>
+</DL>
+<HR>
+
+<A NAME="SFDCAccessController(SFDCAccessController.SharingMode, SFDCAccessController.OperationMode, SFDCAccessController.OperationMode)"><!-- --></A><H3>
+SFDCAccessController</H3>
+<PRE>
+public <B>SFDCAccessController</B>(<A HREF="SFDCAccessController.SharingMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.SharingMode</A>&nbsp;smode,
+                            <A HREF="SFDCAccessController.OperationMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.OperationMode</A>&nbsp;omode,
+                            <A HREF="SFDCAccessController.OperationMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.OperationMode</A>&nbsp;oarrmode)</PRE>
+<DL>
+<DD>This constructor allows you to set the sharing mode, operation mode, and array operation mode.
 <P>
 </DL>
 
@@ -281,7 +329,16 @@ setSharingMode</H3>
 <PRE>
 public void <B>setSharingMode</B>(<A HREF="SFDCAccessController.SharingMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.SharingMode</A>&nbsp;smode)</PRE>
 <DL>
-<DD>Set the sharing mode to use when calling this modules methods.
+<DD>Set the sharing mode to use when calling this modules methods. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -294,7 +351,38 @@ setOperationMode</H3>
 <PRE>
 public void <B>setOperationMode</B>(<A HREF="SFDCAccessController.OperationMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.OperationMode</A>&nbsp;omode)</PRE>
 <DL>
-<DD>Set the operation mode to use when calling this modules methods.
+<DD>Set the operation mode to use when calling this modules methods. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+</DL>
+</DD>
+</DL>
+<HR>
+
+<A NAME="setArrayOperationMode(SFDCAccessController.OperationMode)"><!-- --></A><H3>
+setArrayOperationMode</H3>
+<PRE>
+public void <B>setArrayOperationMode</B>(<A HREF="SFDCAccessController.OperationMode.html" title="enum in &lt;Unnamed&gt;">SFDCAccessController.OperationMode</A>&nbsp;oarrmode)</PRE>
+<DL>
+<DD>Set the array operation mode to use when calling this modules methods. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -312,10 +400,60 @@ public void <B>insertAsUser</B>(SObject&nbsp;someObj,
  Depending on the operation mode do the following:<br>
     BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.<br>
     ALL_OR_NONE - if any of the fieldsToSet can't be created by the user, throw an exception.<br>
- In addition throw an exception if the user does not have the CREATE permission on the object.
+ In addition throw an exception if the user does not have the CREATE permission on the object. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Contact c = new Contact();
+     c.LastName = 'Doe';
+     ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 </DL>
+</DD>
+</DL>
+<HR>
+
+<A NAME="insertAsUser(sObject[], List&lt;String&gt;)"><!-- --></A><H3>
+insertAsUser</H3>
+<PRE>
+public Database.SaveResult[] <B>insertAsUser</B>(sObject[]&nbsp;someObjs,
+                                       List&lt;String&gt;&nbsp;fieldsToSet)</PRE>
+<DL>
+<DD>Insert the objects with the context of the current user session.<br>
+ Depending on the operation mode and array operation mode do:<br>
+    operation mode:
+       BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.<br>
+       ALL_OR_NONE - if any of the fieldsToSet can't be created by the user, throw an exception.<br>
+    array operation mode:
+       BEST_EFFORT - even if some objects are failing to insert, continue to insert the rest.<br>
+       ALL_OR_NONE - if some objects are failing to insert, don't insert any.<br>
+ In addition throw an exception if the user does not have the CREATE permission on the object.<br><br>
+ 
+ Note: You must provide this function an array of sObject of concrete type in order to use this function. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Contact c1 = new Contact();
+     c1.LastName = 'ESAPI TestArray1 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+     Contact c2 = new Contact();
+     c2.LastName = 'ESAPI TestArray2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+     Contact [] arr = new Contact[]{c1, c2};
+     Database.SaveResult[] res = ESAPI.accessController().insertAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+
+<DT><B>Returns:</B><DD>A list of Database.SaveResult objects. Use these objects to identify which objects were successfully inserted.</DL>
 </DD>
 </DL>
 <HR>
@@ -330,10 +468,58 @@ public void <B>updateAsUser</B>(SObject&nbsp;someObj,
  Depending on the operation mode do the following:<br>
     BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.<br>
     ALL_OR_NONE - if any of the fieldsToUpdate can't be updated by the user, throw an exception.<br>
- In addition throw an exception if the user does not have the UPDATE permission on the object.
+ In addition throw an exception if the user does not have the UPDATE permission on the object. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Contact c = (Contact)stdController.getRecord();
+     c.LastName = 'Doe2';
+     ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 </DL>
+</DD>
+</DL>
+<HR>
+
+<A NAME="updateAsUser(Map&lt;ID, sObject&gt;, List&lt;String&gt;)"><!-- --></A><H3>
+updateAsUser</H3>
+<PRE>
+public Database.SaveResult[] <B>updateAsUser</B>(Map&lt;ID, sObject&gt;&nbsp;objMap,
+                                       List&lt;String&gt;&nbsp;fieldsToUpdate)</PRE>
+<DL>
+<DD>Update the objects with the context of the current user session.<br>
+ Depending on the operation mode and array operation mode do:<br>
+    operation mode:
+       BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.<br>
+       ALL_OR_NONE - if any of the fieldsToUpdate can't be updated by the user, throw an exception.<br>
+    array operation mode:
+       BEST_EFFORT - even if some objects are failing to update, continue to update the rest.<br>
+       ALL_OR_NONE - if some objects are failing to update, don't update any.<br>
+ In addition throw an exception if the user does not have the UPDATE permission on the object.<br><br>
+ 
+ Note: You must provide this function a map of sObject of concrete type in order to use this function. We chose a map and not an array 
+  to increase performance. We couldn't internally convert from an array into a map because of Apex restrictions on maps with
+  generic sObject type values. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Contact [] arr = [select LastName,id from Contact];
+     Database.SaveResult[] res = ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+
+<DT><B>Returns:</B><DD>A list of Database.SaveResult objects. Use these objects to identify which objects were successfully updated.</DL>
 </DD>
 </DL>
 <HR>
@@ -343,10 +529,51 @@ deleteAsUser</H3>
 <PRE>
 public void <B>deleteAsUser</B>(SObject&nbsp;someObj)</PRE>
 <DL>
-<DD>Delete the object with the context of the current user session. Throw exception if user can't delete this object.
+<DD>Delete the object with the context of the current user session. Throw exception if user can't delete this object. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Contact c = (Contact)stdController.getRecord();
+     ESAPI.accessController().deleteAsUser(c);
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 </DL>
+</DD>
+</DL>
+<HR>
+
+<A NAME="deleteAsUser(sObject[])"><!-- --></A><H3>
+deleteAsUser</H3>
+<PRE>
+public Database.DeleteResult[] <B>deleteAsUser</B>(sObject[]&nbsp;someObjs)</PRE>
+<DL>
+<DD>Delete the objects with the context of the current user session.<br>
+ Depending on the array operation mode do:<br>
+    array operation mode:
+       BEST_EFFORT - even if some objects are failing to delete, continue to delete the rest.<br>
+       ALL_OR_NONE - if some objects are failing to delete, don't delete any.<br>
+ In addition throw an exception if the user does not have the DELETE permission on the object.<br><br>
+ 
+ Note: You must provide this function an array of sObject of concrete type in order to use this function. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Contact [] arr = [select LastName,id from Contact];
+     Database.DeleteResult[] res = ESAPI.accessController().deleteAsUser(arr);
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+
+<DT><B>Returns:</B><DD>A list of Database.DeleteResult objects. Use these objects to identify which objects were successfully deleted.</DL>
 </DD>
 </DL>
 <HR>
@@ -356,7 +583,17 @@ getViewableFields</H3>
 <PRE>
 public List&lt;Schema.SObjectField&gt; <B>getViewableFields</B>(SObject&nbsp;someObj)</PRE>
 <DL>
-<DD>Return a list of sobject fields that are viewable by the current user session.
+<DD>Return a list of sobject fields that are viewable by the current user session. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Contact c = (Contact)stdController.getRecord();
+     String[] viewableFields = ESAPI.accessController().getViewableFields(c);
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -369,7 +606,17 @@ getUpdateableFields</H3>
 <PRE>
 public List&lt;Schema.SObjectField&gt; <B>getUpdateableFields</B>(SObject&nbsp;someObj)</PRE>
 <DL>
-<DD>Return a list of sobject fields that are updateable by the current user session.
+<DD>Return a list of sobject fields that are updateable by the current user session. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Contact c = (Contact)stdController.getRecord();
+     String[] updateableFields = ESAPI.accessController().getUpdateableFields(c);
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -382,7 +629,17 @@ getCreatableFields</H3>
 <PRE>
 public List&lt;Schema.SObjectField&gt; <B>getCreatableFields</B>(SObject&nbsp;someObj)</PRE>
 <DL>
-<DD>Returns a list of sobject fields that are createable by this user.
+<DD>Returns a list of sobject fields that are createable by the current user session. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Contact c = (Contact)stdController.getRecord();
+     String[] createableFields = ESAPI.accessController().getCreatableFields(c);
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 </DL>

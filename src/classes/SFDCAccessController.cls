@@ -77,22 +77,31 @@ global class SFDCAccessController {
 	private with sharing class AccessControllerWithSharing extends AccessControllerInternal {
 		private override List<SObject> dbQuery(String query) { return Database.query(query); }
 		private override void dbInsert(sObject obj) { insert obj; }
+		private override Database.SaveResult[] dbInsert(sObject [] objs) { return Database.insert(objs, arrayAllOrNoneParam); }
 		private override void dbUpdate(sObject obj) { update obj; }
+		private override Database.SaveResult[] dbUpdate(sObject [] objs) { return Database.update(objs, arrayAllOrNoneParam); }
 		private override void dbDelete(sObject obj) { delete obj; }
+		private override Database.DeleteResult[] dbDelete(sObject [] objs) { return Database.delete(objs, arrayAllOrNoneParam); }
 	}
 	
 	private without sharing class AccessControllerWithoutSharing extends AccessControllerInternal {
 		private override List<SObject> dbQuery(String query) { return Database.query(query); }
 		private override void dbInsert(sObject obj) { insert obj; }
+		private override Database.SaveResult[] dbInsert(sObject [] objs) { return Database.insert(objs, arrayAllOrNoneParam); }
 		private override void dbUpdate(sObject obj) { update obj; }
+		private override Database.SaveResult[] dbUpdate(sObject [] objs) { return Database.update(objs, arrayAllOrNoneParam); }
 		private override void dbDelete(sObject obj) { delete obj; }
+		private override Database.DeleteResult[] dbDelete(sObject [] objs) { return Database.delete(objs, arrayAllOrNoneParam); }
 	}
 	
 	private class AccessControllerInheritSharing extends AccessControllerInternal{
 		private override List<SObject> dbQuery(String query) { return Database.query(query); }
 		private override void dbInsert(sObject obj) { insert obj; }
+		private override Database.SaveResult[] dbInsert(sObject [] objs) { return Database.insert(objs, arrayAllOrNoneParam); }
 		private override void dbUpdate(sObject obj) { update obj; }
+		private override Database.SaveResult[] dbUpdate(sObject [] objs) { return Database.update(objs, arrayAllOrNoneParam); }
 		private override void dbDelete(sObject obj) { delete obj; }
+		private override Database.DeleteResult[] dbDelete(sObject [] objs) { return Database.delete(objs, arrayAllOrNoneParam); }
 	}
 	
 	/* Helper interface : this interface will allow us to have a single interface defintion for all three sharing mode classes.
@@ -101,8 +110,11 @@ global class SFDCAccessController {
 	 */
 	private interface AccessControllerInterface {
 		void insertAsUser(SObject someObj, List<String> fieldsToSet);
+		Database.SaveResult[] insertAsUser(SObject [] someObjs, List<String> fieldsToSet);
 		void updateAsUser(SObject someObj, List<String> fieldsToUpdate);
+		Database.SaveResult[] updateAsUser(Map<ID, sObject> objMap, List<String> fieldsToUpdate);
 		void deleteAsUser(SObject someObj);
+		Database.DeleteResult[] deleteAsUser(SObject [] someObjs);
 		List<Schema.SObjectField> getViewableFields(SObject someObj);
 		List<Schema.SObjectField> getUpdateableFields(SObject someObj);
 		List<Schema.SObjectField> getCreatableFields(SObject someObj);
@@ -115,7 +127,8 @@ global class SFDCAccessController {
 	private SharingMode smode; // the current sharing mode of this instance. We will call the proper instance from the above three based on this value.
 	
 	/**
-	 * Default constructor - will set sharing mode to SharingMode.WITH and operation mode to OperationMode.ALL_OR_NONE
+	 * Default constructor - will set sharing mode to SharingMode.WITH, operation mode to OperationMode.ALL_OR_NONE, 
+	 *  and array operation mode to OperationMode.ALL_OR_NONE.
 	 */
 	global SFDCAccessController() {
 		// init the three access contorl instances to enforce sharing
@@ -126,16 +139,29 @@ global class SFDCAccessController {
 		// init modes
 		setSharingMode(SharingMode.WITH); // defaults to with sharing
 		setOperationMode(OperationMode.ALL_OR_NONE); // defaults to all or none
+		setArrayOperationMode(OperationMode.ALL_OR_NONE); // defaults to all or none
 	}
 	
 	/**
-	 * This constructor allows you to set the sharing mode and operation mode
+	 * This constructor allows you to set the sharing mode and operation mode while using default for array operation mode.
 	 */
 	global SFDCAccessController(SharingMode smode, OperationMode omode) {
 		this();
 		
 		setSharingMode(smode);
 		setOperationMode(omode);
+		setArrayOperationMode(OperationMode.ALL_OR_NONE); // defaults to all or none
+	}
+
+	/**
+	 * This constructor allows you to set the sharing mode, operation mode, and array operation mode.
+	 */
+	global SFDCAccessController(SharingMode smode, OperationMode omode, OperationMode oarrmode) {
+		this();
+		
+		setSharingMode(smode);
+		setOperationMode(omode);
+		setArrayOperationMode(oarrmode);
 	}
 
 	/* 
@@ -151,7 +177,16 @@ global class SFDCAccessController {
 	}
 
 	/**
-	 * Set the sharing mode to use when calling this modules methods.
+	 * Set the sharing mode to use when calling this modules methods. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 */
 	global void setSharingMode(SharingMode smode) {
 		if (smode == null)
@@ -164,7 +199,16 @@ global class SFDCAccessController {
 	}
 
 	/**
-	 * Set the operation mode to use when calling this modules methods.
+	 * Set the operation mode to use when calling this modules methods. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 */
 	global void setOperationMode(OperationMode omode) {
 		/* set operation mode into instance objects. 
@@ -177,31 +221,151 @@ global class SFDCAccessController {
 	}	
 
 	/**
+	 * Set the array operation mode to use when calling this modules methods. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 */
+	global void setArrayOperationMode(OperationMode oarrmode) {
+		/* set array operation mode into instance objects. 
+		 * Note : sharing mode is set in the outter class, but this is set on the actual instance objects 
+		 *  because that is where this mode is going to be used)
+		 */
+		acws.setArrayOperationMode(oarrmode);
+		acwos.setArrayOperationMode(oarrmode);
+		acis.setArrayOperationMode(oarrmode);
+	}
+
+	/**
 	 * Insert the object with the context of the current user session.<br>
 	 * Depending on the operation mode do the following:<br>
 	 *    BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.<br>
 	 *    ALL_OR_NONE - if any of the fieldsToSet can't be created by the user, throw an exception.<br>
-	 * In addition throw an exception if the user does not have the CREATE permission on the object. 
+	 * In addition throw an exception if the user does not have the CREATE permission on the object. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact c = new Contact();
+	 *     c.LastName = 'Doe';
+	 *     ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE> 
 	 */
 	global void insertAsUser(SObject someObj, List<String> fieldsToSet) {
 		// call insertAsUser using specific instance based on current sharing mode
 		getACImpl().insertAsUser(someObj, fieldsToSet);
 	}	
+	
+	/**
+	 * Insert the objects with the context of the current user session.<br>
+	 * Depending on the operation mode and array operation mode do:<br>
+	 *    operation mode:
+	 *       BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.<br>
+	 *       ALL_OR_NONE - if any of the fieldsToSet can't be created by the user, throw an exception.<br>
+	 *    array operation mode:
+	 *       BEST_EFFORT - even if some objects are failing to insert, continue to insert the rest.<br>
+	 *       ALL_OR_NONE - if some objects are failing to insert, don't insert any.<br>
+	 * In addition throw an exception if the user does not have the CREATE permission on the object.<br><br>
+	 * 
+	 * Note: You must provide this function an array of sObject of concrete type in order to use this function. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact c1 = new Contact();
+	 *     c1.LastName = 'ESAPI TestArray1 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	 *     Contact c2 = new Contact();
+	 *     c2.LastName = 'ESAPI TestArray2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	 *     Contact [] arr = new Contact[]{c1, c2};
+	 *     Database.SaveResult[] res = ESAPI.accessController().insertAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 * 
+	 * @return A list of Database.SaveResult objects. Use these objects to identify which objects were successfully inserted. 
+	 */
+	global Database.SaveResult[] insertAsUser(SObject [] someObjs, List<String> fieldsToSet) {
+		// call insertAsUser using specific instance based on current sharing mode
+		return getACImpl().insertAsUser(someObjs, fieldsToSet);
+	}
 
 	/**
 	 * Update the object with the context of the current user session.<br>
 	 * Depending on the operation mode do the following:<br>
 	 *    BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.<br>
 	 *    ALL_OR_NONE - if any of the fieldsToUpdate can't be updated by the user, throw an exception.<br>
-	 * In addition throw an exception if the user does not have the UPDATE permission on the object. 
+	 * In addition throw an exception if the user does not have the UPDATE permission on the object. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact c = (Contact)stdController.getRecord();
+	 *     c.LastName = 'Doe2';
+	 *     ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 */
 	global void updateAsUser(SObject someObj, List<String> fieldsToUpdate) {
 		// call updateAsUser using specific instance based on current sharing mode
 		getACImpl().updateAsUser(someObj, fieldsToUpdate);
 	}
+	
+	/**
+	 * Update the objects with the context of the current user session.<br>
+	 * Depending on the operation mode and array operation mode do:<br>
+	 *    operation mode:
+	 *       BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.<br>
+	 *       ALL_OR_NONE - if any of the fieldsToUpdate can't be updated by the user, throw an exception.<br>
+	 *    array operation mode:
+	 *       BEST_EFFORT - even if some objects are failing to update, continue to update the rest.<br>
+	 *       ALL_OR_NONE - if some objects are failing to update, don't update any.<br>
+	 * In addition throw an exception if the user does not have the UPDATE permission on the object.<br><br>
+	 * 
+	 * Note: You must provide this function a map of sObject of concrete type in order to use this function. We chose a map and not an array 
+	 *  to increase performance. We couldn't internally convert from an array into a map because of Apex restrictions on maps with
+	 *  generic sObject type values. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact [] arr = [select LastName,id from Contact];
+	 *     Database.SaveResult[] res = ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 * 
+	 * @return A list of Database.SaveResult objects. Use these objects to identify which objects were successfully updated.
+	 */
+	global Database.SaveResult[] updateAsUser(Map<ID, sObject> objMap, List<String> fieldsToUpdate) {
+		// call updateAsUser using specific instance based on current sharing mode
+		return getACImpl().updateAsUser(objMap, fieldsToUpdate);
+	}
 
 	/** 
-	 * Delete the object with the context of the current user session. Throw exception if user can't delete this object.
+	 * Delete the object with the context of the current user session. Throw exception if user can't delete this object. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact c = (Contact)stdController.getRecord();
+	 *     ESAPI.accessController().deleteAsUser(c);
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 */
 	global void deleteAsUser(SObject someObj) {
 		// call deleteAsUser using specific instance based on current sharing mode
@@ -209,21 +373,78 @@ global class SFDCAccessController {
 	}
 	
 	/**
-	 * Return a list of sobject fields that are viewable by the current user session. 
+	 * Delete the objects with the context of the current user session.<br>
+	 * Depending on the array operation mode do:<br>
+	 *    array operation mode:
+	 *       BEST_EFFORT - even if some objects are failing to delete, continue to delete the rest.<br>
+	 *       ALL_OR_NONE - if some objects are failing to delete, don't delete any.<br>
+	 * In addition throw an exception if the user does not have the DELETE permission on the object.<br><br>
+	 * 
+	 * Note: You must provide this function an array of sObject of concrete type in order to use this function. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact [] arr = [select LastName,id from Contact];
+	 *     Database.DeleteResult[] res = ESAPI.accessController().deleteAsUser(arr);
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 * 
+	 * @return A list of Database.DeleteResult objects. Use these objects to identify which objects were successfully deleted. 
+	 */
+	global Database.DeleteResult[] deleteAsUser(SObject [] someObjs) {
+		// call deleteAsUser using specific instance based on current sharing mode
+		return getACImpl().deleteAsUser(someObjs);
+	}
+	
+	/**
+	 * Return a list of sobject fields that are viewable by the current user session. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact c = (Contact)stdController.getRecord();
+	 *     String[] viewableFields = ESAPI.accessController().getViewableFields(c);
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE> 
 	 */ 
 	public List<Schema.SObjectField> getViewableFields(SObject someObj) {
 		return getACImpl().getViewableFields(someObj);
 	}
         
 	/**
-	 * Return a list of sobject fields that are updateable by the current user session. 
+	 * Return a list of sobject fields that are updateable by the current user session. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact c = (Contact)stdController.getRecord();
+	 *     String[] updateableFields = ESAPI.accessController().getUpdateableFields(c);
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 */ 
 	public List<Schema.SObjectField> getUpdateableFields(SObject someObj) {
 		return getACImpl().getUpdateableFields(someObj);
 	}
     
 	/**
-	 * Returns a list of sobject fields that are createable by this user.
+	 * Returns a list of sobject fields that are createable by the current user session. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact c = (Contact)stdController.getRecord();
+	 *     String[] createableFields = ESAPI.accessController().getCreatableFields(c);
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 */ 
 	public List<Schema.SObjectField> getCreatableFields(SObject someObj) {
 		return getACImpl().getCreatableFields(someObj);
@@ -235,12 +456,16 @@ global class SFDCAccessController {
 	private virtual class AccessControllerInternal implements AccessControllerInterface {
 	
 		private OperationMode omode; // the current operation mode of this instance.
+		private Boolean arrayAllOrNoneParam; // the current array operation mode param of this instance. (as provided to the database methods second argument)
 		
-		// These four helper functions are just place holders. They are overwritten in the three sharing mode classes.
+		// These db... helper functions are just place holders. They are overwritten in the three sharing mode classes.
 		private virtual List<SObject> dbQuery(String query) { return null; }
 		private virtual void dbInsert(sObject obj) {}
+		private virtual Database.SaveResult[] dbInsert(sObject [] objs) { return null; }
 		private virtual void dbUpdate(sObject obj) {}
+		private virtual Database.SaveResult[] dbUpdate(sObject [] objs) { return null; }
 		private virtual void dbDelete(sObject obj) {}
+		private virtual Database.DeleteResult[] dbDelete(sObject [] objs) { return null; }
 		
 		private void setOperationMode(OperationMode omode) {
 			if (omode == null)
@@ -248,6 +473,18 @@ global class SFDCAccessController {
 				
 			if (omode == OperationMode.ALL_OR_NONE || omode == OperationMode.BEST_EFFORT)
 				this.omode = omode;
+			else
+				throw new AccessControlDmlException('Invalid value for OperationMode');
+		}
+		
+		private void setArrayOperationMode(OperationMode oarrmode) {
+			if (oarrmode == null)
+				throw new AccessControlDmlException('OperationMode must not be null');
+				
+			if (oarrmode == OperationMode.ALL_OR_NONE)
+				this.arrayAllOrNoneParam = true;
+			else if (oarrmode == OperationMode.BEST_EFFORT)
+				this.arrayAllOrNoneParam = false;
 			else
 				throw new AccessControlDmlException('Invalid value for OperationMode');
 		}	
@@ -273,7 +510,7 @@ global class SFDCAccessController {
 		 * (i.e. isAccessible() returns true)
 		 * This is the optimized version when the fieldMap is already availabl
 		 */
-		public List<Schema.SObjectField> getViewableFields(SObject someObj,Map<String,Schema.SObjectField> fieldsMap) {
+		public List<Schema.SObjectField> getViewableFields(Map<String,Schema.SObjectField> fieldsMap) {
 			List<Schema.SObjectField> fields = new List<Schema.SObjectField>{};
 			for(String key:fieldsMap.keySet()) {
 				if(fieldsMap.get(key).getDescribe().isAccessible()) {
@@ -287,13 +524,13 @@ global class SFDCAccessController {
 		 */ 
 		public List<Schema.SObjectField> getViewableFields(SObject someObj) {
 			Map<String,Schema.SObjectField> fieldsMap = getFieldMap(someObj);
-			return getViewableFields(someObj,fieldsMap);
+			return getViewableFields(fieldsMap);
 		}
         
 		/* Returns a list of sobject fields that are updateable by this user.
 		 * This is the optimized version when the fieldMap is already available
 		 */ 
-		public List<Schema.SObjectField> getUpdateableFields(SObject someObj,Map<String,Schema.SObjectField> fieldsMap) {
+		public List<Schema.SObjectField> getUpdateableFields(Map<String,Schema.SObjectField> fieldsMap) {
 			List<Schema.SObjectField> fields = new List<Schema.SObjectField>{};
 			for(String key:fieldsMap.keySet()) {
 				if(fieldsMap.get(key).getDescribe().isUpdateable()) {
@@ -307,13 +544,13 @@ global class SFDCAccessController {
 		 */ 
 		public List<Schema.SObjectField> getUpdateableFields(SObject someObj) {
 			Map<String,Schema.SObjectField> fieldsMap = getFieldMap(someObj);
-			return getUpdateableFields(someObj,fieldsMap);
+			return getUpdateableFields(fieldsMap);
 		}
     
 		/* Returns a list of sobject fields that are createable by this user
 		 * This is the optimized version when the fieldMap is already available
 		 */ 
-		public List<Schema.SObjectField> getCreatableFields(SObject someObj,Map<String,Schema.SObjectField> fieldsMap) {
+		public List<Schema.SObjectField> getCreatableFields(Map<String,Schema.SObjectField> fieldsMap) {
 			List<Schema.SObjectField> fields = new List<Schema.SObjectField>{};
 			for(String key:fieldsMap.keySet()) {
 				if(fieldsMap.get(key).getDescribe().isCreateable()) {
@@ -325,7 +562,7 @@ global class SFDCAccessController {
 		
 		public List<Schema.SObjectField> getCreatableFields(SObject someObj) {
 			Map<String,Schema.SObjectField> fieldsMap = getFieldMap(someObj);
-			return getCreatableFields(someObj,fieldsMap);
+			return getCreatableFields(fieldsMap);
 		}
 		
 		/* Check to see if the user can create this object.
@@ -346,7 +583,7 @@ global class SFDCAccessController {
 														d.getName(),
 														null);
 
-			Set<String> creatableFields = fieldsToStringSet(getCreatableFields(devObj, d.fields.getMap()));
+			Set<String> creatableFields = fieldsToStringSet(getCreatableFields(d.fields.getMap()));
 			
 			// start from a fresh sObject of same type and only set fields the user is allowed to set
 			sObject cleanObj = devObj.getSObjectType().newSObject();
@@ -376,6 +613,74 @@ global class SFDCAccessController {
 				dbInsert(cleanObj);
 			} catch (Exception e) {
 				throw new AccessControlDmlException('Failed to insert object');
+			}
+		}
+
+		/* Check to see if the user can create these objects.
+		 * If he can, depending on the operation mode and array operation mode do the following:
+		 *    operation mode:
+		 * 		BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.
+		 *		ALL_OR_NONE - if any of the fieldsToSet can't be created by the user, throw an exception.
+		 *    array operation mode:
+		 * 		BEST_EFFORT - just insert the records the user can.
+		 *		ALL_OR_NONE - if any of the records can't be inserted, don't insert any.
+		 * In addition throw an exception if the user does not have the CREATE permission on the object.
+		 */
+		public Database.SaveResult[] insertAsUser(SObject [] devObjs, List<String> fieldsToSet) {
+			if (devObjs == null || devObjs.size() == 0 || fieldsToSet == null || fieldsToSet.size() == 0)
+				throw new AccessControlDmlException('null or empty parameter');
+			
+			Schema.DescribeSObjectResult d = devObjs.getSObjectType().getDescribe();
+			if (d.isCreateable() == false) 
+				throw new SFDCAccessControlException('Access Violation', 
+														SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
+														SFDCAccessControlException.ExceptionReason.NO_CREATE,
+														d.getName(),
+														null);
+
+			Set<String> creatableFields = fieldsToStringSet(getCreatableFields(d.fields.getMap()));
+			
+			/* 
+			  create a clean array by cloning the array, empty it, and refill the member object by creating clean ones.
+			  We can't just create an array of sObjects and add the objects using devObj.getSObjectType().newSObject(); 
+			  because it will fail on insert. The error will be: System.TypeException: DML not allowed on abstract class SObject
+			*/
+			sObject [] cleanObjs = devObjs.clone();
+			cleanObjs.clear();
+			
+			// for each object in the array set only creatable fields
+			for (sObject devObj: devObjs) {
+				// start from a fresh sObject of same type and only set fields the user is allowed to set
+				sObject cleanObj = devObj.getSObjectType().newSObject();
+	
+				// set all fields that were requested and the user has permission to set - throw an exception if a field was requested and user can't set and in ALL_OR_NONE mode			
+				for (String fieldName : fieldsToSet) {
+					if (creatableFields == null || creatableFields.contains(fieldName) == false) {
+						// creatableFields is either null which means no fields are allowed to be set by user, or is not null but does not contain the current fieldName
+						if (omode == OperationMode.ALL_OR_NONE)
+							// if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
+							throw new SFDCAccessControlException('Access Violation', 
+												SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
+												SFDCAccessControlException.ExceptionReason.NO_CREATE,
+												d.getName(),
+												fieldName);
+					}
+					else {
+						// user has permission to set fieldName and it was request by the developer - so set it
+						// if the developer did not set this field and it is required, we should get an exception 
+						// when we set it here, or when we perform the actual insert.
+						cleanObj.put(fieldName, devObj.get(fieldName));
+					}
+				}
+				
+				cleanObjs.add(cleanObj);
+			}
+			
+			try {
+				// call dbInsert() to enforce sharing rules if required
+				return dbInsert(cleanObjs);
+			} catch (Exception e) {
+				throw new AccessControlDmlException('Failed to insert objects');
 			}
 		}
 		
@@ -408,7 +713,7 @@ global class SFDCAccessController {
 														d.getName(),
 														null);
 
-			Set<String> updateableFields = fieldsToStringSet(getUpdateableFields(devObj,fieldsMap));
+			Set<String> updateableFields = fieldsToStringSet(getUpdateableFields(fieldsMap));
 			
 			// set all fields that were requested and the user has permission to update - throw an exception if a field was requested and user can't update and in ALL_OR_NONE mode			
 			for (String fieldName : fieldsToUpdate) {
@@ -436,7 +741,86 @@ global class SFDCAccessController {
 			}
 		}
 
-		/* Check to see if the user can delete this object. Throw exception if not.
+		/* Check to see if the user can update these objects.
+		 * If he can, depending on the omode and oarrmode do the following:
+		 *    omode:
+		 * 		BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.
+		 *		ALL_OR_NONE - if any of the fieldsToUpdate can't be updated by the user, throw an exception and don't update any.
+		 *    oarrmode
+		 * 		BEST_EFFORT - just update the records that the user can update.
+		 *		ALL_OR_NONE - if any of the records can't be updated by the user, throw an exception and don't update any.
+		 * In addition throw an exception if the user does not have the UPDATE permission on the object. 
+		 */
+		public Database.SaveResult[] updateAsUser(Map<ID, sObject> devMap, List<String> fieldsToUpdate) {
+			if (devMap == null || devMap.size() == 0 || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
+				throw new AccessControlDmlException('null or empty parameter');
+
+			// We must accepted a map argument from user instead of an array,
+			// because, the user should be able to convert into map just using map.putAll(sobject_array). 
+			// We can't do that because apex does not allow you to call putAll with a generic sObject value.
+			// We also can't call put in a loop to add all objects, because we can't create a map with a generic
+			// sobject value (in apex v16)  				
+			
+			Schema.DescribeSObjectResult d = devMap.getSObjectType().getDescribe();
+			if (d.isUpdateable() == false) 
+				throw new SFDCAccessControlException('Access Violation', 
+														SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
+														SFDCAccessControlException.ExceptionReason.NO_UPDATE,
+														d.getName(),
+														null);
+														
+			Map<String,Schema.SObjectField> fieldsMap = d.fields.getMap();
+			
+			// first load the existing objects as current user (enforcing sharing based on sharing mode)
+			SObject [] cleanObjs = getObjects(devMap.values(), fieldsMap);
+			if (cleanObjs == null || cleanObjs.size() != devMap.size())
+				throw new SFDCAccessControlException('At least some record do not exist or are not shared with current user', 
+														SFDCAccessControlException.ExceptionType.NO_RECORD_FOUND, 
+														SFDCAccessControlException.ExceptionReason.GENERIC,
+														d.getName(),
+														null);
+
+			Set<String> updateableFields = fieldsToStringSet(getUpdateableFields(fieldsMap));
+			
+			// for each object in the array set only updateable fields
+			for (sObject cleanObj: cleanObjs) {
+	    		if (devMap.containsKey(cleanObj.id) == false)
+					throw new SFDCAccessControlException('At least some record do not exist or are not shared with current user', 
+															SFDCAccessControlException.ExceptionType.NO_RECORD_FOUND, 
+															SFDCAccessControlException.ExceptionReason.GENERIC,
+															d.getName(),
+															null);
+
+	    		sObject devObj = devMap.get(cleanObj.id);
+	    		
+				// set all fields that were requested and the user has permission to update - throw an exception if a field was requested and user can't update and in ALL_OR_NONE mode			
+				for (String fieldName : fieldsToUpdate) {
+					if (updateableFields == null || updateableFields.contains(fieldName) == false) {
+						// updateableFields is either null which means no fields are allowed to be set by user, or is not null but does not contain the current fieldName
+						if (omode == OperationMode.ALL_OR_NONE)
+							// if operation mode == ALL_OR_NONE - throw exception because user does not have permission to update fieldName
+							throw new SFDCAccessControlException('Access Violation', 
+												SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
+												SFDCAccessControlException.ExceptionReason.NO_UPDATE,
+												d.getName(),
+												fieldName);
+					}
+					else {
+						// user has permission to update fieldName and it was request by the developer - so update it
+						cleanObj.put(fieldName, devObj.get(fieldName));
+					}
+				}
+			}
+			
+			try {
+				// call dbUpdate() to enforce sharing rules if required
+				return dbUpdate(cleanObjs);
+			} catch (Exception e) {
+				throw new AccessControlDmlException('Failed to update objects');
+			}
+		}
+
+		/* Check to see if the user can delete this object. Throw exception if not. If he can, delete the object.
 		 */
 		public void deleteAsUser(SObject devObj) {
 			if (devObj == null)
@@ -455,6 +839,31 @@ global class SFDCAccessController {
 				dbDelete(devObj);
 			} catch (Exception e) {
 				throw new AccessControlDmlException('Failed to delete object');
+			}
+		}
+
+		/* Check to see if the user can delete these objects. Throw exception if not.
+		 *  If he can, depending on oarrmode:
+		 * 		BEST_EFFORT - just delete the records that the user can delete.
+		 *		ALL_OR_NONE - if any of the records can't be deleted by the user, don't delete any.
+		 */
+		public Database.DeleteResult[] deleteAsUser(SObject [] devObjs) {
+			if (devObjs == null || devObjs.size() == 0)
+				throw new AccessControlDmlException('null parameter');
+			
+			Schema.DescribeSObjectResult d = devObjs.getSObjectType().getDescribe();
+			if (d.isDeletable() == false) 
+				throw new SFDCAccessControlException('Access Violation', 
+														SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
+														SFDCAccessControlException.ExceptionReason.NO_DELETE,
+														d.getName(),
+														null);
+
+			try {
+				// call dbDelete() to enforce sharing rules if required
+				return dbDelete(devObjs);
+			} catch (Exception e) {
+				throw new AccessControlDmlException('Failed to delete objects');
 			}
 		}
     
@@ -508,6 +917,62 @@ global class SFDCAccessController {
 				return res.get(0);
 			}
 		}
+		
+		/* Gets an array of objects and all of their fields.  Note that this will probably break
+		 * on objects with a huge number of fields.  It accepts fieldsMap as an 
+		 * optimization.
+		 *
+		 * This is private because it doesn't not respect FLS, CRUD, or sharing and is only 
+		 * used to get existing objects to be used as a clean object before performing an updateAsUser
+		 *
+		 * Note: field names and object names (retrieved from the describe info) should be safe to add 
+		 * to the SOQL as is, because they should only contain alphanumeric and under score
+		 */ 
+		private SObject [] getObjects(sObject [] objArray, Map<String,Schema.SObjectField> fieldsMap) {
+			
+			Set<String> allFields = fieldsMap.keySet();
+			String Soql = 'SELECT ';
+			Boolean emptyFields = true;
+			Boolean emptyIds = true;
+			
+			// add all fields
+			for (String field : allFields) {
+			    Soql += field + ',';
+			    emptyFields = false;
+			}
+			
+			// make sure we added at least one field
+			if (emptyFields == true)
+				throw new SFDCAccessControlException('Query must contain at least one field', 
+														SFDCAccessControlException.ExceptionType.GENERIC, 
+														SFDCAccessControlException.ExceptionReason.GENERIC,
+														objArray.getSObjectType().getDescribe().getName(),
+														null);
+			
+			// chop the extra , (We confirmed earlier that we had at least one field so the string will always end with ,)
+			Soql = Soql.substring(0,Soql.length()-1);
+			Soql += ' FROM ' + objArray.getSObjectType().getDescribe().getName() + ' WHERE ';
+
+			// add all Ids
+			for (SObject obj : objArray) {
+				if (emptyIds == false)
+					Soql += ' or ';
+				else
+					emptyIds = false;
+				
+			    Soql += 'ID=\'' + String.escapeSingleQuotes(obj.Id) + '\'';
+			}
+			
+			List<SObject> res;
+			
+			try {
+				// call dbQuery() to enforce sharing rules if required
+				res = dbQuery(Soql);
+			} catch (Exception e) {
+				throw new AccessControlDmlException('Failed to query object');
+			}
+			
+			return res;
+		}
 	}
-	
 }

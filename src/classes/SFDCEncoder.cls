@@ -35,21 +35,39 @@ global with sharing class SFDCEncoder {
 	private static final String[] JSINHTML_ENCODED = new String[] { '&amp;', '\\\\', '\\\'', '\\&quot;', '\\r', '\\n', '&lt;', '&gt;' };
 
 	/**
-	 * Similar to the VisualForce HTMLENCODE function.
+	 * Similar to the VisualForce HTMLENCODE function. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * //htmlstr is going to be sent to visualforce as html code
+	 * htmlstr = '&lt;div&gt;' + ESAPI.encoder().SFDC_HTMLENCODE(unsafe_text) + '&lt;/div&gt;';
+	 * </PRE>
 	 */
 	global String SFDC_HTMLENCODE(String input) {
 		return ENCODE(input, HTML_DECODED, HTML_ENCODED);
 	}
 
 	/**
-	 * Similar to the VisualForce JSENCODE function.
+	 * Similar to the VisualForce JSENCODE function. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * //htmlstr is going to be sent to visualforce as html code
+	 * htmlstr = '&lt;script&gt; var str = "' + ESAPI.encoder().SFDC_JSENCODE(unsafe_text) + '";&lt;/script&gt;';
+	 * </PRE>
 	 */
 	global String SFDC_JSENCODE(String input) {
 		return ENCODE(input, JS_DECODED, JS_ENCODED);
 	}
 
 	/**
-	 * Similar to the VisualForce JSINHTMLENCODE function.
+	 * Similar to the VisualForce JSINHTMLENCODE function. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * //htmlstr is going to be sent to visualforce as html code
+	 * htmlstr = '&lt;div onclick=\'alert("' + ESAPI.encoder().SFDC_JSINHTMLENCODE(unsafe_text) + '");\'&gt;some text&lt;/div&gt;';
+	 * </PRE>
 	 */
 	global String SFDC_JSINHTMLENCODE(String input) {
 		return ENCODE(input, JSINHTML_DECODED, JSINHTML_ENCODED);
@@ -58,17 +76,35 @@ global with sharing class SFDCEncoder {
 	/**
 	 * Similar to the VisualForce URLENCODE function. <br><br>
 	 * 
-	 * Note : this function always encodes into UTF-8 URL encoding
+	 * Note : This function always encodes into UTF-8 URL encoding
 	 *  - if you need another encoding type,
-	 *  use the second function which allows to set the encoding 
-	 **/
+	 *  use the second function which allows to set the encoding. <br><br>
+	 *  
+	 * Note : Even when using this function you should still not trust the input as a full 
+	 *  URL because it may have JS or load data from other domains. this function just makes 
+	 *  sure the input is encoded as proper URL. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * //htmlstr is going to be sent to visualforce as html code
+	 * htmlstr = '&lt;img src=\'http://domain/' + ESAPI.encoder().SFDC_URLENCODE(unsafe_text) + '\' /&gt;';
+	 * </PRE> 
+	 */
 	global String SFDC_URLENCODE(String input) {
 		return EncodingUtil.urlEncode(input, 'UTF-8');
 	}
-	
+
 	/**
-	 * Similar to the VisualForce URLENCODE function but allows to set specific encoding type.
-	 **/
+	 * Similar to {@link #SFDC_URLENCODE(String) SFDC_URLENCODE}(String&nbsp;input) but 
+	 *  allows to set specific encoding type. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * //htmlstr is going to be sent to visualforce as html code
+	 * htmlstr = '&lt;img src=\'http://domain/' + ESAPI.encoder().SFDC_URLENCODE(unsafe_text, 'ISO-8859-1') + '\' /&gt;';
+	 * </PRE>
+	 * 
+	 */
 	global String SFDC_URLENCODE(String input, String encoding) {
 		return EncodingUtil.urlEncode(input, encoding);
 	}

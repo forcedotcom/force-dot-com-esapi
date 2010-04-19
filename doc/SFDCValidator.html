@@ -309,7 +309,7 @@ This class provides basic validation functionality for different types of input.
                       Boolean&nbsp;allowNull)</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Calls SFDC_getValidFileName with the default list of allowedExtensions</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Calls SFDC_getValidFileName with the default list of allowedExtensions.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
@@ -355,7 +355,7 @@ This class provides basic validation functionality for different types of input.
                      Boolean&nbsp;allowNull)</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Calls SFDC_getValidFileName with the default list of allowedExtensions</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Calls SFDC_getValidFileName with the default list of allowedExtensions.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
@@ -432,7 +432,13 @@ isValidCreditCard</H3>
 public Boolean <B>isValidCreditCard</B>(String&nbsp;input,
                                            Boolean&nbsp;allowNull)</PRE>
 <DL>
-<DD>Calls getValidCreditCard and returns true if no exceptions are thrown.
+<DD>Calls getValidCreditCard and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().isValidCreditCard(unsafe_text, false) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -447,7 +453,16 @@ public String <B>getValidCreditCard</B>(String&nbsp;input,
                                            Boolean&nbsp;allowNull)</PRE>
 <DL>
 <DD>Returns the exact original input if all tests passed. Invalid input
- will generate an exception. This function will only validate Visa and MasterCard 16 digits credit cards.
+ will generate an exception. This function will only validate Visa and MasterCard 16 digits credit cards. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     creditcard = ESAPI.validator().getValidCreditCard(unsafe_text, false);
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 <DT><B>Parameters:</B><DD><CODE>input</CODE> - The actual user input data to validate.<DD><CODE>allowNull</CODE> - If allowNull is true then an input that is NULL or an empty string will be legal. If allowNull is false then NULL or an empty String will throw an exception.
@@ -465,7 +480,13 @@ public Boolean <B>SFDC_isValidDate</B>(String&nbsp;input,
                                           String&nbsp;format,
                                           Boolean&nbsp;allowNull)</PRE>
 <DL>
-<DD>Calls SFDC_getValidDate and returns true if no exceptions are thrown.
+<DD>Calls SFDC_getValidDate and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().SFDC_isValidDate(unsafe_text, SFDCPatterns.Date1, false) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -481,7 +502,16 @@ public String <B>SFDC_getValidDate</B>(String&nbsp;input,
                                           Boolean&nbsp;allowNull)</PRE>
 <DL>
 <DD>Returns the original input if it is a valid date. Invalid input will generate a descriptive exception.
- Uses RegEx patterns because Apex does not allow the user to choose which format he is going to use when setting the date/datetime objects.
+ Uses RegEx patterns because Apex does not allow the user to choose which format he is going to use when setting the date/datetime objects. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     datestr = ESAPI.validator().SFDC_getValidDate(unsafe_text, SFDCPatterns.Date1, false);
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 <DT><B>Parameters:</B><DD><CODE>input</CODE> - The actual user input data to validate.<DD><CODE>format</CODE> - Required formatting of date inputed (In RegEx - some basic patterns can be found in the SFDCPatterns class).<DD><CODE>allowNull</CODE> - If allowNull is true then an input that is NULL or an empty string will be legal. If allowNull is false then NULL or an empty String will throw an exception.
@@ -500,7 +530,13 @@ public Boolean <B>isValidDouble</B>(String&nbsp;input,
                                        Double&nbsp;maxValue,
                                        Boolean&nbsp;allowNull)</PRE>
 <DL>
-<DD>Calls getValidDouble and returns true if no exceptions are thrown.
+<DD>Calls getValidDouble and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().isValidDouble(unsafe_text, 1.0, 2.0, false) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -517,7 +553,16 @@ public Double <B>getValidDouble</B>(String&nbsp;input,
                                        Boolean&nbsp;allowNull)</PRE>
 <DL>
 <DD>Returns a validated real number as a double. Invalid input
- will generate an exception.
+ will generate an exception. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Double dblValue = ESAPI.validator().getValidDouble(unsafe_text, 1.0, 2.0, false);
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 <DT><B>Parameters:</B><DD><CODE>input</CODE> - The actual input data to validate.<DD><CODE>allowNull</CODE> - If allowNull is true then an input that is NULL or an empty string will be legal. If allowNull is false then NULL or an empty String will throw an exception.<DD><CODE>minValue</CODE> - Lowest legal value for input.<DD><CODE>maxValue</CODE> - Highest legal value for input.
@@ -536,7 +581,13 @@ public Boolean <B>isValidInteger</B>(String&nbsp;input,
                                         Integer&nbsp;maxValue,
                                         Boolean&nbsp;allowNull)</PRE>
 <DL>
-<DD>Calls getValidInteger and returns true if no exceptions are thrown.
+<DD>Calls getValidInteger and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().isValidInteger(unsafe_text, 1, 5, false) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -553,7 +604,16 @@ public Integer <B>getValidInteger</B>(String&nbsp;input,
                                          Boolean&nbsp;allowNull)</PRE>
 <DL>
 <DD>Returns a validated integer. Invalid input
- will generate an exception.
+ will generate an exception. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Integer intValue = ESAPI.validator().getValidInteger(unsafe_text, 1, 5, false);
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 <DT><B>Parameters:</B><DD><CODE>input</CODE> - The actual input data to validate.<DD><CODE>allowNull</CODE> - If allowNull is true then an input that is NULL or an empty string will be legal. If allowNull is false then NULL or an empty String will throw an exception.<DD><CODE>minValue</CODE> - Lowest legal value for input.<DD><CODE>maxValue</CODE> - Highest legal value for input.
@@ -572,7 +632,13 @@ public Boolean <B>isValidNumber</B>(String&nbsp;input,
                                        Long&nbsp;maxValue,
                                        Boolean&nbsp;allowNull)</PRE>
 <DL>
-<DD>Calls getValidNumber and returns true if no exceptions are thrown.
+<DD>Calls getValidNumber and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().isValidNumber(unsafe_text, 0, 5000000, false) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -589,7 +655,16 @@ public Double <B>getValidNumber</B>(String&nbsp;input,
                                        Boolean&nbsp;allowNull)</PRE>
 <DL>
 <DD>Returns a validated number as a double within the range of minValue to maxValue. Invalid input
- will generate an exception. (This function accepts minValue and maxValue as Long vs. Integer in the getValidDouble)
+ will generate an exception. (This function accepts minValue and maxValue as Long vs. Double in the getValidDouble) <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Double dblValue = ESAPI.validator().getValidNumber(unsafe_text, 0, 5000000, false);
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 <DT><B>Parameters:</B><DD><CODE>input</CODE> - The actual input data to validate.<DD><CODE>allowNull</CODE> - If allowNull is true then an input that is NULL or an empty string will be legal. If allowNull is false then NULL or an empty String will throw an exception.<DD><CODE>minValue</CODE> - Lowest legal value for input.<DD><CODE>maxValue</CODE> - Highest legal value for input.
@@ -606,7 +681,13 @@ isValidListItem</H3>
 public Boolean <B>isValidListItem</B>(String&nbsp;input,
                                          Set&lt;String&gt;&nbsp;validItems)</PRE>
 <DL>
-<DD>Calls getValidListItem and returns true if no exceptions are thrown.
+<DD>Calls getValidListItem and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().isValidListItem(unsafe_text, new Set&lt;String&gt;{'US', 'CANADA'}) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -621,7 +702,16 @@ public String <B>getValidListItem</B>(String&nbsp;input,
                                          Set&lt;String&gt;&nbsp;validItems)</PRE>
 <DL>
 <DD>Confirm that the input is in the validItems list. Invalid or non-matching input
- will generate an exception.
+ will generate an exception. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     listItemStr = ESAPI.validator().getValidListItem(unsafe_text, new Set&lt;String&gt;{'US', 'CANADA'});
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 <DT><B>Parameters:</B><DD><CODE>input</CODE> - The value to search 'validItems' for.<DD><CODE>validItems</CODE> - The list of valid items to search for 'input' in.
@@ -639,7 +729,13 @@ public Boolean <B>isValidFileContent</B>(String&nbsp;input,
                                             Integer&nbsp;maxBytes,
                                             Boolean&nbsp;allowNull)</PRE>
 <DL>
-<DD>Calls getValidFileContent and returns true if no exceptions are thrown.
+<DD>Calls getValidFileContent and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().isValidFileContent(unsafe_text, 255, false) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -655,7 +751,16 @@ public String <B>getValidFileContent</B>(String&nbsp;input,
                                             Boolean&nbsp;allowNull)</PRE>
 <DL>
 <DD>Returns the validated file content as a String. This is a good place to check for max file size, allowed character sets, and do virus scans.  Invalid input
- will generate an exception. The default implementation only checks max size, and null.
+ will generate an exception. The default implementation only checks max size, and null. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     fileContentStr = ESAPI.validator().getValidFileContent(unsafe_text, 255, false);
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 <DT><B>Parameters:</B><DD><CODE>input</CODE> - The actual input data to validate.<DD><CODE>maxBytes</CODE> - The maximum number of bytes allowed in a legal file.<DD><CODE>allowNull</CODE> - If allowNull is true then an input that is NULL or an empty string will be legal. If allowNull is false then NULL or an empty String will throw an exception.
@@ -673,7 +778,13 @@ public Boolean <B>isValidPrintable</B>(String&nbsp;input,
                                           Integer&nbsp;maxLength,
                                           Boolean&nbsp;allowNull)</PRE>
 <DL>
-<DD>Calls getValidPrintable and returns true if no exceptions are thrown.
+<DD>Calls getValidPrintable and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().isValidPrintable(unsafe_text, 255, false) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -688,7 +799,16 @@ public String <B>getValidPrintable</B>(String&nbsp;input,
                                           Integer&nbsp;maxLength,
                                           Boolean&nbsp;allowNull)</PRE>
 <DL>
-<DD>Returns the input after validating it contain only printable characters. Invalid input will generate an exception.
+<DD>Returns the input after validating it contain only printable characters. Invalid input will generate an exception. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     printableStr = ESAPI.validator().getValidPrintable(unsafe_text, 255, false);
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 <DT><B>Parameters:</B><DD><CODE>input</CODE> - data to be verified as printable characters<DD><CODE>maxLength</CODE> - Maximum number of bytes allowed in 'input'<DD><CODE>allowNull</CODE> - If allowNull is true then an input that is NULL or an empty string will be legal. If allowNull is false then NULL or an empty String will throw an exception.
@@ -705,7 +825,13 @@ SFDC_isValidFileName</H3>
 public Boolean <B>SFDC_isValidFileName</B>(String&nbsp;input,
                                               Boolean&nbsp;allowNull)</PRE>
 <DL>
-<DD>Calls SFDC_getValidFileName with the default list of allowedExtensions
+<DD>Calls SFDC_getValidFileName with the default list of allowedExtensions. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().SFDC_isValidFileName(unsafe_text, false) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -720,7 +846,13 @@ public Boolean <B>SFDC_isValidFileName</B>(String&nbsp;input,
                                               List&lt;String&gt;&nbsp;allowedExtensions,
                                               Boolean&nbsp;allowNull)</PRE>
 <DL>
-<DD>Calls SFDC_getValidFileName and returns true if no exceptions are thrown.
+<DD>Calls SFDC_getValidFileName and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().SFDC_isValidFileName(unsafe_text, new List&lt;String&gt;{'.png', '.jpg', '.bmp'}, false) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -734,7 +866,16 @@ SFDC_getValidFileName</H3>
 public String <B>SFDC_getValidFileName</B>(String&nbsp;input,
                                               Boolean&nbsp;allowNull)</PRE>
 <DL>
-<DD>Calls SFDC_getValidFileName with the default list of allowedExtensions
+<DD>Calls SFDC_getValidFileName with the default list of allowedExtensions. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     fileNameStr = ESAPI.validator().SFDC_getValidFileName(unsafe_text, false);
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -750,7 +891,16 @@ public String <B>SFDC_getValidFileName</B>(String&nbsp;input,
                                               Boolean&nbsp;allowNull)</PRE>
 <DL>
 <DD>Returns the input string after validating it as a valid file name. Implementors should check for allowed file extensions here, as well as allowed file name characters. Invalid input
- will generate an exception. Apex does not have a File object so we could not use it to verify the canonical file name. Instead we just used a RegEx pattern.
+ will generate an exception. Apex does not have a File object so we could not use it to verify the canonical file name. Instead we just used a RegEx pattern. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     fileNameStr = ESAPI.validator().SFDC_getValidFileName(unsafe_text, new List&lt;String&gt;{'.png', '.jpg', '.bmp'}, false);
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 <DT><B>Parameters:</B><DD><CODE>input</CODE> - The actual input data to validate.<DD><CODE>allowedExtensions</CODE> - The extensiones you want to allow for the input file name. This is case insensitive.<DD><CODE>allowNull</CODE> - If allowNull is true then an input that is NULL or an empty string will be legal. If allowNull is false then NULL or an empty String will throw an exception.
@@ -769,7 +919,13 @@ public Boolean <B>SFDC_isValidFileUpload</B>(String&nbsp;filename,
                                                 Integer&nbsp;maxBytes,
                                                 Boolean&nbsp;allowNull)</PRE>
 <DL>
-<DD>Calls SFDC_assertValidFileUpload using the default allowed file extensions and returns true if no exceptions are thrown.
+<DD>Calls SFDC_assertValidFileUpload using the default allowed file extensions and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().SFDC_isValidFileUpload(unsafe_fileName, unsafe_fileContent, 255, false) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -787,8 +943,18 @@ public void <B>SFDC_assertValidFileUpload</B>(String&nbsp;filename,
                                        Boolean&nbsp;allowNull)</PRE>
 <DL>
 <DD>Validates the filename, and content of a file. Invalid input
- will generate an exception. Does not check file path because Salesforce does not have the notion of a file path.
- This function internally just calls the SFDC_getValidFileName() and getValidFileContent() functions.
+ will generate an exception. Does not check file path because Force.com does not have the notion of a file path.
+ This function internally just calls the SFDC_getValidFileName() and getValidFileContent() functions. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     ESAPI.validator().SFDC_assertValidFileUpload(unsafe_fileName, unsafe_fileContent, 255,
+         new List&lt;String&gt;{'.png', '.jpg', '.bmp'}, false);
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 <DT><B>Parameters:</B><DD><CODE>filename</CODE> - The filename of the uploaded file<DD><CODE>content</CODE> - A String containing the content of the uploaded file.<DD><CODE>maxBytes</CODE> - The max number of bytes allowed for a legal file upload.<DD><CODE>allowedExtensions</CODE> - The list of allowed extensions.<DD><CODE>allowNull</CODE> - If allowNull is true then an input that is NULL or an empty string will be legal. If allowNull is false then NULL or an empty String will throw an exception.
@@ -805,7 +971,16 @@ public Boolean <B>isValidHTTPRequestParameterSet</B>(PageReference&nbsp;request,
                                                         Set&lt;String&gt;&nbsp;required,
                                                         Set&lt;String&gt;&nbsp;optional)</PRE>
 <DL>
-<DD>Calls assertValidHTTPRequestParameterSet and returns true if no exceptions are thrown.
+<DD>Calls assertValidHTTPRequestParameterSet and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().isValidHTTPRequestParameterSet(pageReference, 
+         new Set&lt;String&gt;{'USER', 'PASSWORD'}, 
+         new Set&lt;String&gt;{'GROUP', 'LANG'},
+         255, false) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -821,7 +996,19 @@ public void <B>assertValidHTTPRequestParameterSet</B>(PageReference&nbsp;request
                                                Set&lt;String&gt;&nbsp;optional)</PRE>
 <DL>
 <DD>Validates that the parameters in the current (PagReference) request contain all required parameters and only optional ones in
- addition. Invalid input will generate an exception.
+ addition. Invalid input will generate an exception. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     ESAPI.validator().assertValidHTTPRequestParameterSet(pageReference, 
+         new Set&lt;String&gt;{'USER', 'PASSWORD'}, 
+         new Set&lt;String&gt;{'GROUP', 'LANG'},
+         255, false);
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 <DT><B>Parameters:</B><DD><CODE>request</CODE> - A PageReference request object to validate<DD><CODE>required</CODE> - parameters that are required to be in HTTP request<DD><CODE>optional</CODE> - additional parameters that may be in an HTTP request
@@ -837,7 +1024,13 @@ SFDC_isValidRedirectLocation</H3>
 public Boolean <B>SFDC_isValidRedirectLocation</B>(String&nbsp;input,
                                                       String&nbsp;currentDomain)</PRE>
 <DL>
-<DD>Calls SFDC_getValidRedirectLocation and returns true if no exceptions are thrown.
+<DD>Calls SFDC_getValidRedirectLocation and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().SFDC_isValidRedirectLocation(unsafe_text, 'www.mydomain.com') == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -850,7 +1043,13 @@ SFDC_isValidRedirectLocation</H3>
 <PRE>
 public Boolean <B>SFDC_isValidRedirectLocation</B>(String&nbsp;input)</PRE>
 <DL>
-<DD>Calls SFDC_getValidRedirectLocation and returns true if no exceptions are thrown.
+<DD>Calls SFDC_getValidRedirectLocation and returns true if no exceptions are thrown. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ if (ESAPI.validator().SFDC_isValidRedirectLocation(unsafe_text) == false)
+     // error handling
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -863,7 +1062,16 @@ SFDC_getValidRedirectLocation</H3>
 <PRE>
 public String <B>SFDC_getValidRedirectLocation</B>(String&nbsp;input)</PRE>
 <DL>
-<DD>Calls SFDC_getValidRedirectLocation while trying to get the current domain from ApexPages.currentPage().
+<DD>Calls SFDC_getValidRedirectLocation while trying to get the current domain from ApexPages.currentPage(). <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     redirectStr = ESAPI.validator().SFDC_getValidRedirectLocation(unsafe_text);
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 </DL>
@@ -881,7 +1089,16 @@ public String <B>SFDC_getValidRedirectLocation</B>(String&nbsp;input,
  The default validation only allows redirects to *.salesforce.com, current domain, and relative URLs.
  It also makes sure the URLs only allows http:// and https:// and is no longer than 512 characters long. <br><br>
  
- Note : this implementation does not protect against directory traversal.
+ Note : this implementation does not protect against directory traversal. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     redirectStr = ESAPI.validator().SFDC_getValidRedirectLocation(unsafe_text, 'www.mydomain.com');
+ } catch () {
+     // error handling
+ }
+ </PRE>
 <P>
 <DD><DL>
 <DT><B>Parameters:</B><DD><CODE>input</CODE> - redirect location to be validated<DD><CODE>currentDomain</CODE> - currentDomain to be used. (You should only use this if using ApexPages.CurrentPage() does not work for you) If null, will only allow relative URLS and *.salesforce.com domains.

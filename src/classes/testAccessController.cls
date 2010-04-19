@@ -123,4 +123,93 @@ private class testAccessController {
         		+ e.getExceptionField() + ' Text: ' + e.getText(); 
         }
     }
+    
+    static testMethod void testAccessControlArray() {
+        String errStr;
+        
+        try {
+        	// test with sharing
+	        Contact c1 = new Contact();
+	        c1.LastName = 'ESAPI TestArray1 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        Contact c2 = new Contact();
+	        c2.LastName = 'ESAPI TestArray2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        Contact [] arr = new Contact[]{c1, c2};
+        	
+        	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+        	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+        	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+        	ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
+        	
+        	arr = [select LastName,id from Contact where LastName='ESAPI TestArray1 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3' or LastName='ESAPI TestArray2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'];
+
+			System.assert(arr.size() == 2, 'Could not get two objects from db');
+			
+			arr[0].LastName = 'ESAPI TestArray1 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+			arr[1].LastName = 'ESAPI TestArray2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+        	
+        	ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+        	ESAPI.accessController().deleteAsUser(arr);
+        	
+        	// test without sharing
+	        c1 = new Contact();
+	        c1.LastName = 'ESAPI TestArray3 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        c2 = new Contact();
+	        c2.LastName = 'ESAPI TestArray4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        arr = new Contact[]{c1, c2};
+        	
+        	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
+        	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
+        	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITHOUT);
+        	ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
+        	
+        	arr = [select LastName,id from Contact where LastName='ESAPI TestArray3 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3' or LastName='ESAPI TestArray4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'];
+
+			System.assert(arr.size() == 2, 'Could not get two objects from db');
+			
+			arr[0].LastName = 'ESAPI TestArray3 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+			arr[1].LastName = 'ESAPI TestArray4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+        	
+        	ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+        	ESAPI.accessController().deleteAsUser(arr);
+
+        	// test inherit sharing
+	        c1 = new Contact();
+	        c1.LastName = 'ESAPI TestArray5 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        c2 = new Contact();
+	        c2.LastName = 'ESAPI TestArray6 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        arr = new Contact[]{c1, c2};
+        	
+        	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
+        	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
+        	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.INHERIT);
+        	ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
+        	
+        	arr = [select LastName,id from Contact where LastName='ESAPI TestArray5 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3' or LastName='ESAPI TestArray6 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'];
+
+			System.assert(arr.size() == 2, 'Could not get two objects from db');
+			
+			arr[0].LastName = 'ESAPI TestArray5 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+			arr[1].LastName = 'ESAPI TestArray6 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+        	
+        	ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+        	ESAPI.accessController().deleteAsUser(arr);
+        	
+        } catch (SFDCAccessControlException e) {
+        	errStr = 'Access control violation - Type: ' + e.getExceptionType() + ' Reason: '  
+        		+ e.getExceptionReason() + ' Object: ' + e.getExceptionObject() + ' Field: '  
+        		+ e.getExceptionField() + ' Text: ' + e.getText(); 
+        }
+    }
+    
+    static testMethod void testAccessControlConstructor() {
+        String errStr;
+        
+        try {
+	        SFDCAccessController ac = new SFDCAccessController(SFDCAccessController.SharingMode.WITHOUT, SFDCAccessController.OperationMode.ALL_OR_NONE, SFDCAccessController.OperationMode.ALL_OR_NONE);
+        } catch (SFDCAccessControlException e) {
+        	errStr = 'Access control violation - Type: ' + e.getExceptionType() + ' Reason: '  
+        		+ e.getExceptionReason() + ' Object: ' + e.getExceptionObject() + ' Field: '  
+        		+ e.getExceptionField() + ' Text: ' + e.getText(); 
+        }
+    }    
 }

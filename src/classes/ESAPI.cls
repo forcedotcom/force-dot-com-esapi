@@ -15,7 +15,8 @@
  */
 
 /**
- * ESAPI locator class is provided to make it easy to gain access to the current ESAPI classes in use.
+ * ESAPI locator class is provided to make it easy to gain access to the current ESAPI classes in use.<br>
+ * For example you can use the validator() function to access the validator methods. (i.e. <CODE>ESAPI.validator().isValidCreditCard(creditcard, false)</CODE>)
  */
 global with sharing class ESAPI {	
 
