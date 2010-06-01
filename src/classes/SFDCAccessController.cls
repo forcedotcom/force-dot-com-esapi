@@ -109,9 +109,9 @@ global class SFDCAccessController {
 	 *  we can use it to call these same functions defined in the interface.
 	 */
 	private interface AccessControllerInterface {
-		void insertAsUser(SObject someObj, List<String> fieldsToSet);
+		SObject insertAsUser(SObject someObj, List<String> fieldsToSet);
 		Database.SaveResult[] insertAsUser(SObject [] someObjs, List<String> fieldsToSet);
-		void updateAsUser(SObject someObj, List<String> fieldsToUpdate);
+		SObject updateAsUser(SObject someObj, List<String> fieldsToUpdate);
 		Database.SaveResult[] updateAsUser(Map<ID, sObject> objMap, List<String> fieldsToUpdate);
 		void deleteAsUser(SObject someObj);
 		Database.DeleteResult[] deleteAsUser(SObject [] someObjs);
@@ -247,22 +247,23 @@ global class SFDCAccessController {
 	 * Depending on the operation mode do the following:<br>
 	 *    BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.<br>
 	 *    ALL_OR_NONE - if any of the fieldsToSet can't be created by the user, throw an exception.<br>
-	 * In addition throw an exception if the user does not have the CREATE permission on the object. <br><br>
+	 * In addition throw an exception if the user does not have the CREATE permission on the object.<br>
+	 * The function will return the new object that was created and inserted as SObject. <br><br>
 	 * 
 	 * Example:<br>
 	 * <PRE>
 	 * try {
 	 *     Contact c = new Contact();
 	 *     c.LastName = 'Doe';
-	 *     ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
+	 *     c = (Contact)ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
 	 * </PRE> 
 	 */
-	global void insertAsUser(SObject someObj, List<String> fieldsToSet) {
+	global SObject insertAsUser(SObject someObj, List<String> fieldsToSet) {
 		// call insertAsUser using specific instance based on current sharing mode
-		getACImpl().insertAsUser(someObj, fieldsToSet);
+		return getACImpl().insertAsUser(someObj, fieldsToSet);
 	}	
 	
 	/**
@@ -274,7 +275,8 @@ global class SFDCAccessController {
 	 *    array operation mode:
 	 *       BEST_EFFORT - even if some objects are failing to insert, continue to insert the rest.<br>
 	 *       ALL_OR_NONE - if some objects are failing to insert, don't insert any.<br>
-	 * In addition throw an exception if the user does not have the CREATE permission on the object.<br><br>
+	 * In addition throw an exception if the user does not have the CREATE permission on the object.<br>
+	 * Use the getId() method from the SaveResult to get the new id of each object inserted.<br><br>
 	 * 
 	 * Note: You must provide this function an array of sObject of concrete type in order to use this function. <br><br>
 	 * 
@@ -304,22 +306,23 @@ global class SFDCAccessController {
 	 * Depending on the operation mode do the following:<br>
 	 *    BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.<br>
 	 *    ALL_OR_NONE - if any of the fieldsToUpdate can't be updated by the user, throw an exception.<br>
-	 * In addition throw an exception if the user does not have the UPDATE permission on the object. <br><br>
+	 * In addition throw an exception if the user does not have the UPDATE permission on the object.<br>
+	 * The function will return the updated object that was actually updated into db as SObject. <br><br>
 	 * 
 	 * Example:<br>
 	 * <PRE>
 	 * try {
 	 *     Contact c = (Contact)stdController.getRecord();
 	 *     c.LastName = 'Doe2';
-	 *     ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});
+	 *     c = (Contact)ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
 	 * </PRE>
 	 */
-	global void updateAsUser(SObject someObj, List<String> fieldsToUpdate) {
+	global SObject updateAsUser(SObject someObj, List<String> fieldsToUpdate) {
 		// call updateAsUser using specific instance based on current sharing mode
-		getACImpl().updateAsUser(someObj, fieldsToUpdate);
+		return getACImpl().updateAsUser(someObj, fieldsToUpdate);
 	}
 	
 	/**
@@ -331,7 +334,8 @@ global class SFDCAccessController {
 	 *    array operation mode:
 	 *       BEST_EFFORT - even if some objects are failing to update, continue to update the rest.<br>
 	 *       ALL_OR_NONE - if some objects are failing to update, don't update any.<br>
-	 * In addition throw an exception if the user does not have the UPDATE permission on the object.<br><br>
+	 * In addition throw an exception if the user does not have the UPDATE permission on the object.<br>
+	 * Use the getId() method from the SaveResult to get the ids of each object updated.<br><br>
 	 * 
 	 * Note: You must provide this function a map of sObject of concrete type in order to use this function. We chose a map and not an array 
 	 *  to increase performance. We couldn't internally convert from an array into a map because of Apex restrictions on maps with
@@ -569,9 +573,10 @@ global class SFDCAccessController {
 		 * If he can, depending on the operation mode do the following:
 		 * 		BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.
 		 *		ALL_OR_NONE - if any of the fieldsToSet can't be created by the user, throw an exception.
-		 * In addition throw an exception if the user does not have the CREATE permission on the object. 
+		 * In addition throw an exception if the user does not have the CREATE permission on the object.
+		 * Returns the cleanObj created and inserted into db. 
 		 */
-		public void insertAsUser(SObject devObj, List<String> fieldsToSet) {
+		public SObject insertAsUser(SObject devObj, List<String> fieldsToSet) {
 			if (devObj == null || fieldsToSet == null || fieldsToSet.size() == 0)
 				throw new AccessControlDmlException('null or empty parameter');
 			
@@ -614,6 +619,7 @@ global class SFDCAccessController {
 			} catch (Exception e) {
 				throw new AccessControlDmlException('Failed to insert object');
 			}
+			return cleanObj;
 		}
 
 		/* Check to see if the user can create these objects.
@@ -688,9 +694,10 @@ global class SFDCAccessController {
 		 * If he can, depending on the operation mode do the following:
 		 * 		BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.
 		 *		ALL_OR_NONE - if any of the fieldsToUpdate can't be updated by the user, throw an exception.
-		 * In addition throw an exception if the user does not have the UPDATE permission on the object. 
+		 * In addition throw an exception if the user does not have the UPDATE permission on the object.
+		 * Returns the cleanObj that was actually used to update the db.
 		 */
-		public void updateAsUser(SObject devObj, List<String> fieldsToUpdate) {
+		public SObject updateAsUser(SObject devObj, List<String> fieldsToUpdate) {
 			if (devObj == null || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
 				throw new AccessControlDmlException('null or empty parameter');
 			
@@ -739,6 +746,7 @@ global class SFDCAccessController {
 			} catch (Exception e) {
 				throw new AccessControlDmlException('Failed to update object');
 			}
+			return cleanObj;
 		}
 
 		/* Check to see if the user can update these objects.

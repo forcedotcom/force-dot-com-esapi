@@ -209,7 +209,7 @@ This class provides access control functionality to enforce CRUD/FLS and sharing
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-<CODE>&nbsp;void</CODE></FONT></TD>
+<CODE>&nbsp;SObject</CODE></FONT></TD>
 <TD><CODE><B><A HREF="SFDCAccessController.html#insertAsUser(SObject, List&lt;String&gt;)">insertAsUser</A></B>(SObject&nbsp;someObj,
              List&lt;String&gt;&nbsp;fieldsToSet)</CODE>
 
@@ -251,7 +251,7 @@ This class provides access control functionality to enforce CRUD/FLS and sharing
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-<CODE>&nbsp;void</CODE></FONT></TD>
+<CODE>&nbsp;SObject</CODE></FONT></TD>
 <TD><CODE><B><A HREF="SFDCAccessController.html#updateAsUser(SObject, List&lt;String&gt;)">updateAsUser</A></B>(SObject&nbsp;someObj,
              List&lt;String&gt;&nbsp;fieldsToUpdate)</CODE>
 
@@ -393,21 +393,22 @@ public void <B>setArrayOperationMode</B>(<A HREF="SFDCAccessController.Operation
 <A NAME="insertAsUser(SObject, List&lt;String&gt;)"><!-- --></A><H3>
 insertAsUser</H3>
 <PRE>
-public void <B>insertAsUser</B>(SObject&nbsp;someObj,
+public SObject <B>insertAsUser</B>(SObject&nbsp;someObj,
                          List&lt;String&gt;&nbsp;fieldsToSet)</PRE>
 <DL>
 <DD>Insert the object with the context of the current user session.<br>
  Depending on the operation mode do the following:<br>
     BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.<br>
     ALL_OR_NONE - if any of the fieldsToSet can't be created by the user, throw an exception.<br>
- In addition throw an exception if the user does not have the CREATE permission on the object. <br><br>
+ In addition throw an exception if the user does not have the CREATE permission on the object.<br>
+ The function will return the new object that was created and inserted as SObject. <br><br>
  
  Example:<br>
  <PRE>
  try {
      Contact c = new Contact();
      c.LastName = 'Doe';
-     ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
+     c = (Contact)ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
  } catch (SFDCAccessControlException e) {
      // error handling
  }
@@ -433,7 +434,8 @@ public Database.SaveResult[] <B>insertAsUser</B>(sObject[]&nbsp;someObjs,
     array operation mode:
        BEST_EFFORT - even if some objects are failing to insert, continue to insert the rest.<br>
        ALL_OR_NONE - if some objects are failing to insert, don't insert any.<br>
- In addition throw an exception if the user does not have the CREATE permission on the object.<br><br>
+ In addition throw an exception if the user does not have the CREATE permission on the object.<br>
+ Use the getId() method from the SaveResult to get the new id of each object inserted.<br><br>
  
  Note: You must provide this function an array of sObject of concrete type in order to use this function. <br><br>
  
@@ -461,21 +463,22 @@ public Database.SaveResult[] <B>insertAsUser</B>(sObject[]&nbsp;someObjs,
 <A NAME="updateAsUser(SObject, List&lt;String&gt;)"><!-- --></A><H3>
 updateAsUser</H3>
 <PRE>
-public void <B>updateAsUser</B>(SObject&nbsp;someObj,
+public SObject <B>updateAsUser</B>(SObject&nbsp;someObj,
                          List&lt;String&gt;&nbsp;fieldsToUpdate)</PRE>
 <DL>
 <DD>Update the object with the context of the current user session.<br>
  Depending on the operation mode do the following:<br>
     BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.<br>
     ALL_OR_NONE - if any of the fieldsToUpdate can't be updated by the user, throw an exception.<br>
- In addition throw an exception if the user does not have the UPDATE permission on the object. <br><br>
+ In addition throw an exception if the user does not have the UPDATE permission on the object.<br>
+ The function will return the updated object that was actually updated into db as SObject. <br><br>
  
  Example:<br>
  <PRE>
  try {
      Contact c = (Contact)stdController.getRecord();
      c.LastName = 'Doe2';
-     ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});
+     c = (Contact)ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});
  } catch (SFDCAccessControlException e) {
      // error handling
  }
@@ -501,7 +504,8 @@ public Database.SaveResult[] <B>updateAsUser</B>(Map&lt;ID, sObject&gt;&nbsp;obj
     array operation mode:
        BEST_EFFORT - even if some objects are failing to update, continue to update the rest.<br>
        ALL_OR_NONE - if some objects are failing to update, don't update any.<br>
- In addition throw an exception if the user does not have the UPDATE permission on the object.<br><br>
+ In addition throw an exception if the user does not have the UPDATE permission on the object.<br>
+ Use the getId() method from the SaveResult to get the ids of each object updated.<br><br>
  
  Note: You must provide this function a map of sObject of concrete type in order to use this function. We chose a map and not an array 
   to increase performance. We couldn't internally convert from an array into a map because of Apex restrictions on maps with

@@ -46,9 +46,7 @@ private class testAccessController {
         try {
         	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
-        	ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
-        	
-        	c = [select LastName from Contact where LastName='ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3' limit 1];
+        	c = (Contact)ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
         	
 	    	ESAPI.accessController().getCreatableFields(c);
 	    	ESAPI.accessController().getUpdateableFields(c);
@@ -63,9 +61,7 @@ private class testAccessController {
         	
         	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITHOUT);
-        	ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
-        	
-        	c = [select LastName from Contact where LastName='ESAPI Test2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3' limit 1];
+        	c = (Contact)ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
         	
         	c.LastName = 'ESAPI Test2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
         	ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});
@@ -76,9 +72,7 @@ private class testAccessController {
         	
         	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.INHERIT);
-        	ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
-        	
-        	c = [select LastName from Contact where LastName='ESAPI Test3 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3' limit 1];
+        	c = (Contact)ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
         	
         	c.LastName = 'ESAPI Test3 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
         	ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});
@@ -134,15 +128,20 @@ private class testAccessController {
 	        Contact c2 = new Contact();
 	        c2.LastName = 'ESAPI TestArray2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
 	        Contact [] arr = new Contact[]{c1, c2};
-        	
+	        Database.SaveResult [] results;
+	        
         	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
         	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
-        	ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
+        	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
         	
-        	arr = [select LastName,id from Contact where LastName='ESAPI TestArray1 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3' or LastName='ESAPI TestArray2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'];
+        	System.assert(results.size() == 2, 'Could not insert two objects into db #1');
+        	System.assert(results[0].isSuccess() == true, 'Could not insert first object into db #1 [0] - ' + results[0].getErrors());
+        	System.assert(results[0].isSuccess() == true, 'Could not insert first object into db #1 [1] - ' + results[0].getErrors());
+        	
+        	arr = [select LastName,id from Contact where Id=:results[0].getId() or Id=:results[1].getId()];
 
-			System.assert(arr.size() == 2, 'Could not get two objects from db');
+			System.assert(arr.size() == 2, 'Could not get two objects from db #1');
 			
 			arr[0].LastName = 'ESAPI TestArray1 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
 			arr[1].LastName = 'ESAPI TestArray2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
@@ -160,11 +159,11 @@ private class testAccessController {
         	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
         	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITHOUT);
-        	ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
+        	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
         	
-        	arr = [select LastName,id from Contact where LastName='ESAPI TestArray3 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3' or LastName='ESAPI TestArray4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'];
+        	arr = [select LastName,id from Contact where Id=:results[0].getId() or Id=:results[1].getId()];
 
-			System.assert(arr.size() == 2, 'Could not get two objects from db');
+			System.assert(arr.size() == 2, 'Could not get two objects from db #2');
 			
 			arr[0].LastName = 'ESAPI TestArray3 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
 			arr[1].LastName = 'ESAPI TestArray4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
@@ -182,11 +181,11 @@ private class testAccessController {
         	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
         	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.INHERIT);
-        	ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
+        	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
         	
-        	arr = [select LastName,id from Contact where LastName='ESAPI TestArray5 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3' or LastName='ESAPI TestArray6 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'];
+        	arr = [select LastName,id from Contact where Id=:results[0].getId() or Id=:results[1].getId()];
 
-			System.assert(arr.size() == 2, 'Could not get two objects from db');
+			System.assert(arr.size() == 2, 'Could not get two objects from db #3');
 			
 			arr[0].LastName = 'ESAPI TestArray5 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
 			arr[1].LastName = 'ESAPI TestArray6 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
