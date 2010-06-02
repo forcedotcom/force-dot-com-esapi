@@ -248,14 +248,18 @@ global class SFDCAccessController {
 	 *    BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.<br>
 	 *    ALL_OR_NONE - if any of the fieldsToSet can't be created by the user, throw an exception.<br>
 	 * In addition throw an exception if the user does not have the CREATE permission on the object.<br>
-	 * The function will return the new object that was created and inserted as SObject. <br><br>
+	 * The function will return the new object that was created and inserted as SObject. Depending on<br> 
+	 * the current user permissions, the operation mode, and the fields you requested to set, this might<br>
+	 * not be all the fields you have in your original object. <br><br>
 	 * 
 	 * Example:<br>
 	 * <PRE>
 	 * try {
 	 *     Contact c = new Contact();
 	 *     c.LastName = 'Doe';
+	 *     c.FirstName = 'John';
 	 *     c = (Contact)ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
+	 *     // Important note: c does not have the FirstName property set anymore, see function description for more info.
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
@@ -307,14 +311,18 @@ global class SFDCAccessController {
 	 *    BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.<br>
 	 *    ALL_OR_NONE - if any of the fieldsToUpdate can't be updated by the user, throw an exception.<br>
 	 * In addition throw an exception if the user does not have the UPDATE permission on the object.<br>
-	 * The function will return the updated object that was actually updated into db as SObject. <br><br>
+	 * The function will return the updated object that was actually used to update the db. Depending on<br> 
+	 * the current user permissions, the operation mode, and the fields you requested to update, this might<br>
+	 * not be all the fields you have in your original object. <br><br>
 	 * 
 	 * Example:<br>
 	 * <PRE>
 	 * try {
 	 *     Contact c = (Contact)stdController.getRecord();
 	 *     c.LastName = 'Doe2';
+	 *     c.FirstName = 'John';
 	 *     c = (Contact)ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});
+	 *     // Important note: c does not have the FirstName property set anymore, see function description for more info.
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
@@ -410,7 +418,7 @@ global class SFDCAccessController {
 	 * <PRE>
 	 * try {
 	 *     Contact c = (Contact)stdController.getRecord();
-	 *     String[] viewableFields = ESAPI.accessController().getViewableFields(c);
+	 *     Schema.SObjectField[] viewableFields = ESAPI.accessController().getViewableFields(c);
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
@@ -427,7 +435,7 @@ global class SFDCAccessController {
 	 * <PRE>
 	 * try {
 	 *     Contact c = (Contact)stdController.getRecord();
-	 *     String[] updateableFields = ESAPI.accessController().getUpdateableFields(c);
+	 *     Schema.SObjectField[] updateableFields = ESAPI.accessController().getUpdateableFields(c);
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
@@ -444,7 +452,7 @@ global class SFDCAccessController {
 	 * <PRE>
 	 * try {
 	 *     Contact c = (Contact)stdController.getRecord();
-	 *     String[] createableFields = ESAPI.accessController().getCreatableFields(c);
+	 *     Schema.SObjectField[] createableFields = ESAPI.accessController().getCreatableFields(c);
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
@@ -647,7 +655,7 @@ global class SFDCAccessController {
 			Set<String> creatableFields = fieldsToStringSet(getCreatableFields(d.fields.getMap()));
 			
 			/* 
-			  create a clean array by cloning the array, empty it, and refill the member object by creating clean ones.
+			  create a clean array by cloning the array, empty it, and refill the member objects by creating clean ones.
 			  We can't just create an array of sObjects and add the objects using devObj.getSObjectType().newSObject(); 
 			  because it will fail on insert. The error will be: System.TypeException: DML not allowed on abstract class SObject
 			*/
