@@ -110,11 +110,18 @@ global class SFDCAccessController {
 	 */
 	private interface AccessControllerInterface {
 		SObject insertAsUser(SObject someObj, List<String> fieldsToSet);
+		SObject insertAsUser(SObject someObj, List<Schema.SObjectField> fieldsToSet);
 		Database.SaveResult[] insertAsUser(SObject [] someObjs, List<String> fieldsToSet);
+		Database.SaveResult[] insertAsUser(SObject [] someObjs, List<Schema.SObjectField> fieldsToSet);
+		
 		SObject updateAsUser(SObject someObj, List<String> fieldsToUpdate);
+		SObject updateAsUser(SObject someObj, List<Schema.SObjectField> fieldsToUpdate);
 		Database.SaveResult[] updateAsUser(Map<ID, sObject> objMap, List<String> fieldsToUpdate);
+		Database.SaveResult[] updateAsUser(Map<ID, sObject> objMap, List<Schema.SObjectField> fieldsToUpdate);
+		
 		void deleteAsUser(SObject someObj);
 		Database.DeleteResult[] deleteAsUser(SObject [] someObjs);
+		
 		List<Schema.SObjectField> getViewableFields(SObject someObj);
 		List<Schema.SObjectField> getUpdateableFields(SObject someObj);
 		List<Schema.SObjectField> getCreatableFields(SObject someObj);
@@ -268,6 +275,17 @@ global class SFDCAccessController {
 	global SObject insertAsUser(SObject someObj, List<String> fieldsToSet) {
 		// call insertAsUser using specific instance based on current sharing mode
 		return getACImpl().insertAsUser(someObj, fieldsToSet);
+	}
+	
+	/**
+	 * Same as <a href="SFDCAccessController.html#insertAsUser%28SObject,%20List%3CString%3E%29">
+	 * <code>insertAsUser(SObject, List&lt;String&gt;)</code></a> 
+	 * but accepts a list of Schema.SObjectField instead of strings. Using this also avoids using sObject.fields 
+	 * member variable which is limited to 10 calls.
+	 */
+	global SObject insertAsUser(SObject someObj, List<Schema.SObjectField> fieldsToSet) {
+		// call insertAsUser using specific instance based on current sharing mode
+		return getACImpl().insertAsUser(someObj, fieldsToSet);
 	}	
 	
 	/**
@@ -306,6 +324,17 @@ global class SFDCAccessController {
 	}
 
 	/**
+	 * Same as <a href="SFDCAccessController.html#insertAsUser%28sObject[],%20List%3CString%3E%29">
+	 * <code>insertAsUser(sObject[], List&lt;String&gt;)</code></a> 
+	 * but accepts a list of Schema.SObjectField instead of strings. Using this also avoids using sObject.fields 
+	 * member variable which is limited to 10 calls.
+	 */
+	global Database.SaveResult[] insertAsUser(SObject [] someObjs, List<Schema.SObjectField> fieldsToSet) {
+		// call insertAsUser using specific instance based on current sharing mode
+		return getACImpl().insertAsUser(someObjs, fieldsToSet);
+	}
+
+	/**
 	 * Update the object with the context of the current user session.<br>
 	 * Depending on the operation mode do the following:<br>
 	 *    BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.<br>
@@ -329,6 +358,17 @@ global class SFDCAccessController {
 	 * </PRE>
 	 */
 	global SObject updateAsUser(SObject someObj, List<String> fieldsToUpdate) {
+		// call updateAsUser using specific instance based on current sharing mode
+		return getACImpl().updateAsUser(someObj, fieldsToUpdate);
+	}
+
+	/**
+	 * Same as <a href="SFDCAccessController.html#updateAsUser%28SObject,%20List%3CString%3E%29">
+	 * <code>updateAsUser(SObject, List&lt;String&gt;)</code></a> 
+	 * but accepts a list of Schema.SObjectField instead of strings. Using this also avoids using sObject.fields 
+	 * member variable which is limited to 10 calls.
+	 */
+	global SObject updateAsUser(SObject someObj, List<Schema.SObjectField> fieldsToUpdate) {
 		// call updateAsUser using specific instance based on current sharing mode
 		return getACImpl().updateAsUser(someObj, fieldsToUpdate);
 	}
@@ -362,6 +402,17 @@ global class SFDCAccessController {
 	 * @return A list of Database.SaveResult objects. Use these objects to identify which objects were successfully updated.
 	 */
 	global Database.SaveResult[] updateAsUser(Map<ID, sObject> objMap, List<String> fieldsToUpdate) {
+		// call updateAsUser using specific instance based on current sharing mode
+		return getACImpl().updateAsUser(objMap, fieldsToUpdate);
+	}
+
+	/**
+	 * Same as <a href="SFDCAccessController.html#updateAsUser%28Map%3CID,%20sObject%3E,%20List%3CString%3E%29">
+	 * <code>updateAsUser(Map&lt;ID, sObject&gt;, List&lt;String&gt;)</code></a> 
+	 * but accepts a list of Schema.SObjectField instead of strings. Using this also avoids using sObject.fields 
+	 * member variable which is limited to 10 calls.
+	 */
+	global Database.SaveResult[] updateAsUser(Map<ID, sObject> objMap, List<Schema.SObjectField> fieldsToUpdate) {
 		// call updateAsUser using specific instance based on current sharing mode
 		return getACImpl().updateAsUser(objMap, fieldsToUpdate);
 	}
@@ -629,6 +680,52 @@ global class SFDCAccessController {
 			}
 			return cleanObj;
 		}
+		
+		/* Same as insertAsUser(SObject, List&lt;String&gt;) but with Schema.SObjectField instead of string.
+		 */
+		public SObject insertAsUser(SObject devObj, List<Schema.SObjectField> fieldsToSet) {
+			if (devObj == null || fieldsToSet == null || fieldsToSet.size() == 0)
+				throw new AccessControlDmlException('null or empty parameter');
+			
+			Schema.DescribeSObjectResult d = devObj.getSObjectType().getDescribe();
+			if (d.isCreateable() == false) 
+				throw new SFDCAccessControlException('Access Violation', 
+														SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
+														SFDCAccessControlException.ExceptionReason.NO_CREATE,
+														d.getName(),
+														null);
+
+			// start from a fresh sObject of same type and only set fields the user is allowed to set
+			sObject cleanObj = devObj.getSObjectType().newSObject();
+
+			// set all fields that were requested and the user has permission to set - throw an exception if a field was requested and user can't set and in ALL_OR_NONE mode			
+			for (Schema.SObjectField field : fieldsToSet) {
+				if (field.getDescribe().isCreateable() == false) {
+					// field is not allowed to be created by current user
+					if (omode == OperationMode.ALL_OR_NONE)
+						// if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
+						throw new SFDCAccessControlException('Access Violation', 
+											SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
+											SFDCAccessControlException.ExceptionReason.NO_CREATE,
+											d.getName(),
+											field.getDescribe().getName());
+				}
+				else {
+					// user has permission to set fieldName and it was request by the developer - so set it
+					// if the developer did not set this field and it is required, we should get an exception 
+					// when we set it here, or when we perform the actual insert.
+					cleanObj.put(field, devObj.get(field));
+				}
+			}
+			
+			try {
+				// call dbInsert() to enforce sharing rules if required
+				dbInsert(cleanObj);
+			} catch (Exception e) {
+				throw new AccessControlDmlException('Failed to insert object');
+			}
+			return cleanObj;
+		}
 
 		/* Check to see if the user can create these objects.
 		 * If he can, depending on the operation mode and array operation mode do the following:
@@ -698,6 +795,64 @@ global class SFDCAccessController {
 			}
 		}
 		
+		/* Same as insertAsUser(SObject [], List&lt;String&gt;) but with Schema.SObjectField instead of string.
+		 */
+		public Database.SaveResult[] insertAsUser(SObject [] devObjs, List<Schema.SObjectField> fieldsToSet) {
+			if (devObjs == null || devObjs.size() == 0 || fieldsToSet == null || fieldsToSet.size() == 0)
+				throw new AccessControlDmlException('null or empty parameter');
+			
+			Schema.DescribeSObjectResult d = devObjs.getSObjectType().getDescribe();
+			if (d.isCreateable() == false) 
+				throw new SFDCAccessControlException('Access Violation', 
+														SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
+														SFDCAccessControlException.ExceptionReason.NO_CREATE,
+														d.getName(),
+														null);
+
+			/* 
+			  create a clean array by cloning the array, empty it, and refill the member objects by creating clean ones.
+			  We can't just create an array of sObjects and add the objects using devObj.getSObjectType().newSObject(); 
+			  because it will fail on insert. The error will be: System.TypeException: DML not allowed on abstract class SObject
+			*/
+			sObject [] cleanObjs = devObjs.clone();
+			cleanObjs.clear();
+			
+			// for each object in the array set only creatable fields
+			for (sObject devObj: devObjs) {
+				// start from a fresh sObject of same type and only set fields the user is allowed to set
+				sObject cleanObj = devObj.getSObjectType().newSObject();
+	
+				// set all fields that were requested and the user has permission to set - throw an exception if a field was requested and user can't set and in ALL_OR_NONE mode			
+				for (Schema.SObjectField field : fieldsToSet) {
+					if (field.getDescribe().isCreateable() == false) {
+						// field is not allowed to be created by current user
+						if (omode == OperationMode.ALL_OR_NONE)
+							// if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
+							throw new SFDCAccessControlException('Access Violation', 
+												SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
+												SFDCAccessControlException.ExceptionReason.NO_CREATE,
+												d.getName(),
+												field.getDescribe().getName());
+					}
+					else {
+						// user has permission to set fieldName and it was request by the developer - so set it
+						// if the developer did not set this field and it is required, we should get an exception 
+						// when we set it here, or when we perform the actual insert.
+						cleanObj.put(field, devObj.get(field));
+					}
+				}
+				
+				cleanObjs.add(cleanObj);
+			}
+			
+			try {
+				// call dbInsert() to enforce sharing rules if required
+				return dbInsert(cleanObjs);
+			} catch (Exception e) {
+				throw new AccessControlDmlException('Failed to insert objects');
+			}
+		}
+		
 		/* Check to see if the user can update this object.
 		 * If he can, depending on the operation mode do the following:
 		 * 		BEST_EFFORT - just set the fields that both the user can update and that were specified in the fieldsToUpdate.
@@ -720,7 +875,7 @@ global class SFDCAccessController {
 			Map<String,Schema.SObjectField> fieldsMap = d.fields.getMap();
 			
 			// first load the existing object as current user (enforcing sharing based on sharing mode)
-			SObject cleanObj = getObject(devObj, fieldsMap);
+			SObject cleanObj = getObject(devObj);
 			if (cleanObj == null)
 				throw new SFDCAccessControlException('Record does not exist or not shared with current user', 
 														SFDCAccessControlException.ExceptionType.NO_RECORD_FOUND, 
@@ -745,6 +900,56 @@ global class SFDCAccessController {
 				else {
 					// user has permission to update fieldName and it was request by the developer - so update it
 					cleanObj.put(fieldName, devObj.get(fieldName));
+				}
+			}
+			
+			try {
+				// call dbUpdate() to enforce sharing rules if required
+				dbUpdate(cleanObj);
+			} catch (Exception e) {
+				throw new AccessControlDmlException('Failed to update object');
+			}
+			return cleanObj;
+		}
+		
+		/* Same as updateAsUser(SObject, List&lt;String&gt;) but with Schema.SObjectField instead of string.
+		 */
+		public SObject updateAsUser(SObject devObj, List<Schema.SObjectField> fieldsToUpdate) {
+			if (devObj == null || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
+				throw new AccessControlDmlException('null or empty parameter');
+			
+			Schema.DescribeSObjectResult d = devObj.getSObjectType().getDescribe();
+			if (d.isUpdateable() == false) 
+				throw new SFDCAccessControlException('Access Violation', 
+														SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
+														SFDCAccessControlException.ExceptionReason.NO_UPDATE,
+														d.getName(),
+														null);
+														
+			// first load the existing object as current user (enforcing sharing based on sharing mode)
+			SObject cleanObj = getObject(devObj);
+			if (cleanObj == null)
+				throw new SFDCAccessControlException('Record does not exist or not shared with current user', 
+														SFDCAccessControlException.ExceptionType.NO_RECORD_FOUND, 
+														SFDCAccessControlException.ExceptionReason.GENERIC,
+														d.getName(),
+														null);
+
+			// set all fields that were requested and the user has permission to update - throw an exception if a field was requested and user can't update and in ALL_OR_NONE mode			
+			for (Schema.SObjectField field : fieldsToUpdate) {
+				if (field.getDescribe().isUpdateable() == false) {
+					// field is not allowed to be updated by current user
+					if (omode == OperationMode.ALL_OR_NONE)
+						// if operation mode == ALL_OR_NONE - throw exception because user does not have permission to update fieldName
+						throw new SFDCAccessControlException('Access Violation', 
+											SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
+											SFDCAccessControlException.ExceptionReason.NO_UPDATE,
+											d.getName(),
+											field.getDescribe().getName());
+				}
+				else {
+					// user has permission to update fieldName and it was request by the developer - so update it
+					cleanObj.put(field, devObj.get(field));
 				}
 			}
 			
@@ -788,7 +993,7 @@ global class SFDCAccessController {
 			Map<String,Schema.SObjectField> fieldsMap = d.fields.getMap();
 			
 			// first load the existing objects as current user (enforcing sharing based on sharing mode)
-			SObject [] cleanObjs = getObjects(devMap.values(), fieldsMap);
+			SObject [] cleanObjs = getObjects(devMap.values());
 			if (cleanObjs == null || cleanObjs.size() != devMap.size())
 				throw new SFDCAccessControlException('At least some record do not exist or are not shared with current user', 
 														SFDCAccessControlException.ExceptionType.NO_RECORD_FOUND, 
@@ -824,6 +1029,73 @@ global class SFDCAccessController {
 					else {
 						// user has permission to update fieldName and it was request by the developer - so update it
 						cleanObj.put(fieldName, devObj.get(fieldName));
+					}
+				}
+			}
+			
+			try {
+				// call dbUpdate() to enforce sharing rules if required
+				return dbUpdate(cleanObjs);
+			} catch (Exception e) {
+				throw new AccessControlDmlException('Failed to update objects');
+			}
+		}
+		
+		/* Same as updateAsUser(Map&lt;ID, sObject&gt;, List&lt;String&gt;) but with Schema.SObjectField instead of string.
+		 */
+		public Database.SaveResult[] updateAsUser(Map<ID, sObject> devMap, List<Schema.SObjectField> fieldsToUpdate) {
+			if (devMap == null || devMap.size() == 0 || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
+				throw new AccessControlDmlException('null or empty parameter');
+
+			// We must accepted a map argument from user instead of an array,
+			// because, the user should be able to convert into map just using map.putAll(sobject_array). 
+			// We can't do that because apex does not allow you to call putAll with a generic sObject value.
+			// We also can't call put in a loop to add all objects, because we can't create a map with a generic
+			// sobject value (in apex v16)  				
+			
+			Schema.DescribeSObjectResult d = devMap.getSObjectType().getDescribe();
+			if (d.isUpdateable() == false) 
+				throw new SFDCAccessControlException('Access Violation', 
+														SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
+														SFDCAccessControlException.ExceptionReason.NO_UPDATE,
+														d.getName(),
+														null);
+														
+			// first load the existing objects as current user (enforcing sharing based on sharing mode)
+			SObject [] cleanObjs = getObjects(devMap.values());
+			if (cleanObjs == null || cleanObjs.size() != devMap.size())
+				throw new SFDCAccessControlException('At least some record do not exist or are not shared with current user', 
+														SFDCAccessControlException.ExceptionType.NO_RECORD_FOUND, 
+														SFDCAccessControlException.ExceptionReason.GENERIC,
+														d.getName(),
+														null);
+
+			// for each object in the array set only updateable fields
+			for (sObject cleanObj: cleanObjs) {
+	    		if (devMap.containsKey(cleanObj.id) == false)
+					throw new SFDCAccessControlException('At least some record do not exist or are not shared with current user', 
+															SFDCAccessControlException.ExceptionType.NO_RECORD_FOUND, 
+															SFDCAccessControlException.ExceptionReason.GENERIC,
+															d.getName(),
+															null);
+
+	    		sObject devObj = devMap.get(cleanObj.id);
+
+				// set all fields that were requested and the user has permission to update - throw an exception if a field was requested and user can't update and in ALL_OR_NONE mode			
+				for (Schema.SObjectField field : fieldsToUpdate) {
+					if (field.getDescribe().isUpdateable() == false) {
+						// field is not allowed to be updated by current user
+						if (omode == OperationMode.ALL_OR_NONE)
+							// if operation mode == ALL_OR_NONE - throw exception because user does not have permission to update fieldName
+							throw new SFDCAccessControlException('Access Violation', 
+												SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
+												SFDCAccessControlException.ExceptionReason.NO_UPDATE,
+												d.getName(),
+												field.getDescribe().getName());
+					}
+					else {
+						// user has permission to update fieldName and it was request by the developer - so update it
+						cleanObj.put(field, devObj.get(field));
 					}
 				}
 			}
@@ -883,39 +1155,17 @@ global class SFDCAccessController {
 			}
 		}
     
-		/* Gets an object and all of its fields.  Note that this will probably break
-		 * on objects with a huge number of fields.  It accepts fieldsMap as an 
-		 * optimization.
+		/* Gets a clean object from db.
 		 *
 		 * This is private because it doesn't not respect FLS, CRUD, or sharing and is only 
 		 * used to get existing object to be used as a clean object before performing an updateAsUser
 		 *
-		 * Note: field names and object names (retrieved from the describe info) should be safe to add 
+		 * Note: object names (retrieved from the describe info) should be safe to add 
 		 * to the SOQL as is, because they should only contain alphanumeric and under score
 		 */ 
-		private SObject getObject(sObject obj, Map<String,Schema.SObjectField> fieldsMap) {
+		private SObject getObject(sObject obj) {
 			
-			Set<String> allFields = fieldsMap.keySet();
-			String Soql = 'SELECT ';
-			Boolean emptyFields = true;
-			
-			// add all fields
-			for (String field : allFields) {
-			    Soql += field + ',';
-			    emptyFields = false;
-			}
-			
-			// make sure we added at least one field
-			if (emptyFields == true)
-				throw new SFDCAccessControlException('Query must contain at least one field', 
-														SFDCAccessControlException.ExceptionType.GENERIC, 
-														SFDCAccessControlException.ExceptionReason.GENERIC,
-														obj.getSObjectType().getDescribe().getName(),
-														null);
-			
-			// chop the extra , (We confirmed earlier that we had at least one field so the string will always end with ,)
-			Soql = Soql.substring(0,Soql.length()-1);
-			Soql += ' FROM ' + obj.getSObjectType().getDescribe().getName() + ' WHERE Id=\'' + String.escapeSingleQuotes(obj.Id) + '\'';
+			String Soql = 'SELECT Id FROM ' + obj.getSObjectType().getDescribe().getName() + ' WHERE Id=\'' + String.escapeSingleQuotes(obj.Id) + '\'';
 			
 			List<SObject> res;
 			
@@ -934,41 +1184,19 @@ global class SFDCAccessController {
 			}
 		}
 		
-		/* Gets an array of objects and all of their fields.  Note that this will probably break
-		 * on objects with a huge number of fields.  It accepts fieldsMap as an 
-		 * optimization.
+		/* Gets an array of clean objects from db.
 		 *
 		 * This is private because it doesn't not respect FLS, CRUD, or sharing and is only 
 		 * used to get existing objects to be used as a clean object before performing an updateAsUser
 		 *
-		 * Note: field names and object names (retrieved from the describe info) should be safe to add 
+		 * Note: object names (retrieved from the describe info) should be safe to add 
 		 * to the SOQL as is, because they should only contain alphanumeric and under score
 		 */ 
-		private SObject [] getObjects(sObject [] objArray, Map<String,Schema.SObjectField> fieldsMap) {
+		private SObject [] getObjects(sObject [] objArray) {
 			
-			Set<String> allFields = fieldsMap.keySet();
-			String Soql = 'SELECT ';
-			Boolean emptyFields = true;
+			String Soql = 'SELECT Id FROM ' + objArray.getSObjectType().getDescribe().getName() + ' WHERE ';
 			Boolean emptyIds = true;
 			
-			// add all fields
-			for (String field : allFields) {
-			    Soql += field + ',';
-			    emptyFields = false;
-			}
-			
-			// make sure we added at least one field
-			if (emptyFields == true)
-				throw new SFDCAccessControlException('Query must contain at least one field', 
-														SFDCAccessControlException.ExceptionType.GENERIC, 
-														SFDCAccessControlException.ExceptionReason.GENERIC,
-														objArray.getSObjectType().getDescribe().getName(),
-														null);
-			
-			// chop the extra , (We confirmed earlier that we had at least one field so the string will always end with ,)
-			Soql = Soql.substring(0,Soql.length()-1);
-			Soql += ' FROM ' + objArray.getSObjectType().getDescribe().getName() + ' WHERE ';
-
 			// add all Ids
 			for (SObject obj : objArray) {
 				if (emptyIds == false)

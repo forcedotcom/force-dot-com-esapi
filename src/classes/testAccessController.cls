@@ -46,7 +46,9 @@ private class testAccessController {
         try {
         	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+           	
         	c = (Contact)ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
+        	c = (Contact)ESAPI.accessController().insertAsUser(c, new List<Schema.SObjectField>{Contact.LastName});
         	
 	    	ESAPI.accessController().getCreatableFields(c);
 	    	ESAPI.accessController().getUpdateableFields(c);
@@ -54,6 +56,7 @@ private class testAccessController {
         	
         	c.LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
         	ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});
+        	ESAPI.accessController().updateAsUser(c, new List<Schema.SObjectField>{Contact.LastName});
         	ESAPI.accessController().deleteAsUser(c);
         	
         	c = new Contact();
@@ -118,6 +121,66 @@ private class testAccessController {
         }
     }
     
+    static testMethod void testReturnedObjects() {
+     	/* test return object and id with strings */
+    	Contact tmp;
+    	Contact tmp2;
+    	Contact tmp3;
+    	Contact tmp4;
+        Contact c1 = new Contact();
+        c1.LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 c1'; // We add this long random to make sure we will not conflict with any real last name 
+    	tmp = (Contact)ESAPI.accessController().insertAsUser(c1, new List<String>{'LastName'});
+    	tmp2 = [select LastName, Id from Contact where LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 c1' limit 1];
+    	tmp3 = [select LastName, Id from Contact where Id =: tmp.Id limit 1];
+        	
+    	System.assert(tmp != null, 'insertAsUser returned null');
+    	System.assert(tmp2 != null, 'select with LastName after insertAsUser returned null');
+    	System.assert(tmp3 != null, 'select with tmp.id after insertAsUser returned null');
+        	
+    	System.assert(tmp.id == tmp2.id, 'select with LastName after insertAsUser returned id which is not equal to id from returned object');
+    	System.assert(tmp.id == tmp3.id, 'select with tmp.id after insertAsUser returned id which is not equal to id from returned object');
+        	
+    	tmp.LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 c1 updated';
+    	tmp4 = (Contact)ESAPI.accessController().updateAsUser(tmp, new List<String>{'LastName'});
+    	tmp3 = [select LastName, Id from Contact where Id =: tmp.Id limit 1];
+
+    	System.assert(tmp4 != null, 'updateAsUser returned null');
+    	System.assert(tmp3 != null, 'select with tmp.id after updateAsUser returned null');
+        	
+    	System.assert(tmp.id == tmp4.id, 'id from returned object after updateAsUser is not equal to id from original returned object from insertAsUser');
+    	System.assert(tmp.id == tmp3.id, 'id from select with id from original reurned object after insertAsUser, is not equal to id from original returned object from insertAsUser');
+        	
+    	System.assert(tmp.LastName == tmp3.LastName, 'c1.LastName == tmp3.LastName');
+    	System.assert(tmp.LastName == tmp4.LastName, 'c1.LastName == tmp4.LastName');
+
+    	/* test return object and id with Schema.SObjectField */
+        c1 = new Contact();
+        c1.LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 c1'; // We add this long random to make sure we will not conflict with any real last name 
+    	tmp = (Contact)ESAPI.accessController().insertAsUser(c1, new List<Schema.SObjectField>{Contact.LastName});
+    	tmp2 = [select LastName, Id from Contact where LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 c1' limit 1];
+    	tmp3 = [select LastName, Id from Contact where Id =: tmp.Id limit 1];
+        	
+    	System.assert(tmp != null, 'insertAsUser returned null');
+    	System.assert(tmp2 != null, 'select with LastName after insertAsUser returned null');
+    	System.assert(tmp3 != null, 'select with tmp.id after insertAsUser returned null');
+        	
+    	System.assert(tmp.id == tmp2.id, 'select with LastName after insertAsUser returned id which is not equal to id from returned object');
+    	System.assert(tmp.id == tmp3.id, 'select with tmp.id after insertAsUser returned id which is not equal to id from returned object');
+        	
+    	tmp.LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 c1 updated';
+    	tmp4 = (Contact)ESAPI.accessController().updateAsUser(tmp, new List<Schema.SObjectField>{Contact.LastName});
+    	tmp3 = [select LastName, Id from Contact where Id =: tmp.Id limit 1];
+
+    	System.assert(tmp4 != null, 'updateAsUser returned null');
+    	System.assert(tmp3 != null, 'select with tmp.id after updateAsUser returned null');
+        	
+    	System.assert(tmp.id == tmp4.id, 'id from returned object after updateAsUser is not equal to id from original returned object from insertAsUser');
+    	System.assert(tmp.id == tmp3.id, 'id from select with id from original reurned object after insertAsUser, is not equal to id from original returned object from insertAsUser');
+        	
+    	System.assert(tmp.LastName == tmp3.LastName, 'c1.LastName == tmp3.LastName');
+    	System.assert(tmp.LastName == tmp4.LastName, 'c1.LastName == tmp4.LastName');
+    }
+    
     static testMethod void testAccessControlArray() {
         String errStr;
         
@@ -134,6 +197,7 @@ private class testAccessController {
         	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
         	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
+        	results = ESAPI.accessController().insertAsUser(arr, new List<Schema.SObjectField>{Contact.LastName});
         	
         	System.assert(results.size() == 2, 'Could not insert two objects into db #1');
         	System.assert(results[0].isSuccess() == true, 'Could not insert first object into db #1 [0] - ' + results[0].getErrors());
@@ -147,6 +211,7 @@ private class testAccessController {
 			arr[1].LastName = 'ESAPI TestArray2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
         	
         	ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+        	ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<Schema.SObjectField>{Contact.LastName});
         	ESAPI.accessController().deleteAsUser(arr);
         	
         	// test without sharing
