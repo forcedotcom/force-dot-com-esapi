@@ -275,5 +275,24 @@ private class testAccessController {
         		+ e.getExceptionReason() + ' Object: ' + e.getExceptionObject() + ' Field: '  
         		+ e.getExceptionField() + ' Text: ' + e.getText(); 
         }
-    }    
+    }
+    
+    static testMethod void testLimits() {
+    	/* This test is to confirm the new functions we added (insertAsUser and updateAsUser) 
+    	   that use Schema.SObjectField indded solve the fields limiters issue. (fields has a limit of 10 calls)
+    	   Now that we removed this limit, we should be able to call these functions until we hit the next type of
+    	   limiter, this is likely to be DML operations which are capped at 100. This is why we are testing up to 100 */
+    	   
+    	Integer max = 100;
+    	
+    	for (Integer i = 0; i < max; i++) {
+    		Contact c = new Contact();
+    		c.LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 c limits'; // We add this long random to make sure we will not conflict with any real last name
+    		ESAPI.accessController().insertAsUser(c, new List<Schema.SObjectField>{Contact.LastName});
+    	}
+    	
+    	Contact [] arr = [select LastName, Id from Contact where LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 c limits'];
+    	
+    	System.assert(arr.size() == max, 'testLimits');
+    }
 }
