@@ -265,7 +265,7 @@ global class SFDCAccessController {
 	 *     Contact c = new Contact();
 	 *     c.LastName = 'Doe';
 	 *     c.FirstName = 'John';
-	 *     c = (Contact)ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
+	 *     c = (Contact)ESAPI.accessController().insertAsUser(c, new List&lt;String&gt;{'LastName'});
 	 *     // Important note: c does not have the FirstName property set anymore, see function description for more info.
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
@@ -281,7 +281,20 @@ global class SFDCAccessController {
 	 * Same as <a href="SFDCAccessController.html#insertAsUser%28SObject,%20List%3CString%3E%29">
 	 * <code>insertAsUser(SObject, List&lt;String&gt;)</code></a> 
 	 * but accepts a list of Schema.SObjectField instead of strings. Using this also avoids using sObject.fields 
-	 * member variable which is limited to 10 calls.
+	 * member variable which is limited to 10 calls.<br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact c = new Contact();
+	 *     c.LastName = 'Doe';
+	 *     c.FirstName = 'John';
+	 *     c = (Contact)ESAPI.accessController().insertAsUser(c, new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+	 *     // Important note: c does not have the FirstName property set anymore, see function description for more info.
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 */
 	global SObject insertAsUser(SObject someObj, List<Schema.SObjectField> fieldsToSet) {
 		// call insertAsUser using specific instance based on current sharing mode
@@ -306,11 +319,11 @@ global class SFDCAccessController {
 	 * <PRE>
 	 * try {
 	 *     Contact c1 = new Contact();
-	 *     c1.LastName = 'ESAPI TestArray1 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	 *     c1.LastName = 'Doe1';
 	 *     Contact c2 = new Contact();
-	 *     c2.LastName = 'ESAPI TestArray2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	 *     c2.LastName = 'Doe2';
 	 *     Contact [] arr = new Contact[]{c1, c2};
-	 *     Database.SaveResult[] res = ESAPI.accessController().insertAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+	 *     Database.SaveResult[] res = ESAPI.accessController().insertAsUser(new Map&lt;ID, Contact&gt;(arr), new List&lt;String&gt;{'LastName'});
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
@@ -327,7 +340,21 @@ global class SFDCAccessController {
 	 * Same as <a href="SFDCAccessController.html#insertAsUser%28sObject[],%20List%3CString%3E%29">
 	 * <code>insertAsUser(sObject[], List&lt;String&gt;)</code></a> 
 	 * but accepts a list of Schema.SObjectField instead of strings. Using this also avoids using sObject.fields 
-	 * member variable which is limited to 10 calls.
+	 * member variable which is limited to 10 calls.<br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact c1 = new Contact();
+	 *     c1.LastName = 'Doe1';
+	 *     Contact c2 = new Contact();
+	 *     c2.LastName = 'Doe2';
+	 *     Contact [] arr = new Contact[]{c1, c2};
+	 *     Database.SaveResult[] res = ESAPI.accessController().insertAsUser(new Map&lt;ID, Contact&gt;(arr), new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 */
 	global Database.SaveResult[] insertAsUser(SObject [] someObjs, List<Schema.SObjectField> fieldsToSet) {
 		// call insertAsUser using specific instance based on current sharing mode
@@ -350,7 +377,7 @@ global class SFDCAccessController {
 	 *     Contact c = (Contact)stdController.getRecord();
 	 *     c.LastName = 'Doe2';
 	 *     c.FirstName = 'John';
-	 *     c = (Contact)ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});
+	 *     c = (Contact)ESAPI.accessController().updateAsUser(c, new List&lt;String&gt;{'LastName'});
 	 *     // Important note: c does not have the FirstName property set anymore, see function description for more info.
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
@@ -366,7 +393,20 @@ global class SFDCAccessController {
 	 * Same as <a href="SFDCAccessController.html#updateAsUser%28SObject,%20List%3CString%3E%29">
 	 * <code>updateAsUser(SObject, List&lt;String&gt;)</code></a> 
 	 * but accepts a list of Schema.SObjectField instead of strings. Using this also avoids using sObject.fields 
-	 * member variable which is limited to 10 calls.
+	 * member variable which is limited to 10 calls.<br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact c = (Contact)stdController.getRecord();
+	 *     c.LastName = 'Doe2';
+	 *     c.FirstName = 'John';
+	 *     c = (Contact)ESAPI.accessController().updateAsUser(c, new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+	 *     // Important note: c does not have the FirstName property set anymore, see function description for more info.
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 */
 	global SObject updateAsUser(SObject someObj, List<Schema.SObjectField> fieldsToUpdate) {
 		// call updateAsUser using specific instance based on current sharing mode
@@ -393,7 +433,7 @@ global class SFDCAccessController {
 	 * <PRE>
 	 * try {
 	 *     Contact [] arr = [select LastName,id from Contact];
-	 *     Database.SaveResult[] res = ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+	 *     Database.SaveResult[] res = ESAPI.accessController().updateAsUser(new Map&lt;ID, Contact&gt;(arr), new List&lt;String&gt;{'LastName'});
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
@@ -410,7 +450,17 @@ global class SFDCAccessController {
 	 * Same as <a href="SFDCAccessController.html#updateAsUser%28Map%3CID,%20sObject%3E,%20List%3CString%3E%29">
 	 * <code>updateAsUser(Map&lt;ID, sObject&gt;, List&lt;String&gt;)</code></a> 
 	 * but accepts a list of Schema.SObjectField instead of strings. Using this also avoids using sObject.fields 
-	 * member variable which is limited to 10 calls.
+	 * member variable which is limited to 10 calls.<br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Contact [] arr = [select LastName,id from Contact];
+	 *     Database.SaveResult[] res = ESAPI.accessController().updateAsUser(new Map&lt;ID, Contact&gt;(arr), new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
 	 */
 	global Database.SaveResult[] updateAsUser(Map<ID, sObject> objMap, List<Schema.SObjectField> fieldsToUpdate) {
 		// call updateAsUser using specific instance based on current sharing mode
