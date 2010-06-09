@@ -111,16 +111,16 @@ global class SFDCAccessController {
 	private interface AccessControllerInterface {
 		SObject insertAsUser(SObject someObj, List<String> fieldsToSet);
 		SObject insertAsUser(SObject someObj, List<Schema.SObjectField> fieldsToSet);
-		Database.SaveResult[] insertAsUser(SObject [] someObjs, List<String> fieldsToSet);
-		Database.SaveResult[] insertAsUser(SObject [] someObjs, List<Schema.SObjectField> fieldsToSet);
+		SFDCAccessControlResults.InsertResults insertAsUser(SObject [] someObjs, List<String> fieldsToSet);
+		SFDCAccessControlResults.InsertResults insertAsUser(SObject [] someObjs, List<Schema.SObjectField> fieldsToSet);
 		
 		SObject updateAsUser(SObject someObj, List<String> fieldsToUpdate);
 		SObject updateAsUser(SObject someObj, List<Schema.SObjectField> fieldsToUpdate);
-		Database.SaveResult[] updateAsUser(Map<ID, sObject> objMap, List<String> fieldsToUpdate);
-		Database.SaveResult[] updateAsUser(Map<ID, sObject> objMap, List<Schema.SObjectField> fieldsToUpdate);
+		SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> objMap, List<String> fieldsToUpdate);
+		SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> objMap, List<Schema.SObjectField> fieldsToUpdate);
 		
 		void deleteAsUser(SObject someObj);
-		Database.DeleteResult[] deleteAsUser(SObject [] someObjs);
+		SFDCAccessControlResults.DeleteResults deleteAsUser(SObject [] someObjs);
 		
 		List<Schema.SObjectField> getViewableFields(SObject someObj);
 		List<Schema.SObjectField> getUpdateableFields(SObject someObj);
@@ -311,7 +311,7 @@ global class SFDCAccessController {
 	 *       BEST_EFFORT - even if some objects are failing to insert, continue to insert the rest.<br>
 	 *       ALL_OR_NONE - if some objects are failing to insert, don't insert any.<br>
 	 * In addition throw an exception if the user does not have the CREATE permission on the object.<br>
-	 * Use the getId() method from the SaveResult to get the new id of each object inserted.<br><br>
+	 * Use the return value to get the SaveResult [] and the objects that were actually inserted into db.<br><br>
 	 * 
 	 * Note: You must provide this function an array of sObject of concrete type in order to use this function. <br><br>
 	 * 
@@ -323,15 +323,17 @@ global class SFDCAccessController {
 	 *     Contact c2 = new Contact();
 	 *     c2.LastName = 'Doe2';
 	 *     Contact [] arr = new Contact[]{c1, c2};
-	 *     Database.SaveResult[] res = ESAPI.accessController().insertAsUser(new Map&lt;ID, Contact&gt;(arr), new List&lt;String&gt;{'LastName'});
+	 *     SFDCAccessControlResults.InsertResults res;
+	 *     res = ESAPI.accessController().insertAsUser(new Map&lt;ID, Contact&gt;(arr), new List&lt;String&gt;{'LastName'});
+	 *     arr = res.getInsertedObjects();
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
 	 * </PRE>
 	 * 
-	 * @return A list of Database.SaveResult objects. Use these objects to identify which objects were successfully inserted. 
+	 * @return A SFDCAccessControlResults.InsertResults object.
 	 */
-	global Database.SaveResult[] insertAsUser(SObject [] someObjs, List<String> fieldsToSet) {
+	global SFDCAccessControlResults.InsertResults insertAsUser(SObject [] someObjs, List<String> fieldsToSet) {
 		// call insertAsUser using specific instance based on current sharing mode
 		return getACImpl().insertAsUser(someObjs, fieldsToSet);
 	}
@@ -350,13 +352,15 @@ global class SFDCAccessController {
 	 *     Contact c2 = new Contact();
 	 *     c2.LastName = 'Doe2';
 	 *     Contact [] arr = new Contact[]{c1, c2};
-	 *     Database.SaveResult[] res = ESAPI.accessController().insertAsUser(new Map&lt;ID, Contact&gt;(arr), new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+	 *     SFDCAccessControlResults.InsertResults res;	 
+	 *     res = ESAPI.accessController().insertAsUser(new Map&lt;ID, Contact&gt;(arr), new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+	 *     arr = res.getInsertedObjects();
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
 	 * </PRE>
 	 */
-	global Database.SaveResult[] insertAsUser(SObject [] someObjs, List<Schema.SObjectField> fieldsToSet) {
+	global SFDCAccessControlResults.InsertResults insertAsUser(SObject [] someObjs, List<Schema.SObjectField> fieldsToSet) {
 		// call insertAsUser using specific instance based on current sharing mode
 		return getACImpl().insertAsUser(someObjs, fieldsToSet);
 	}
@@ -423,7 +427,7 @@ global class SFDCAccessController {
 	 *       BEST_EFFORT - even if some objects are failing to update, continue to update the rest.<br>
 	 *       ALL_OR_NONE - if some objects are failing to update, don't update any.<br>
 	 * In addition throw an exception if the user does not have the UPDATE permission on the object.<br>
-	 * Use the getId() method from the SaveResult to get the ids of each object updated.<br><br>
+	 * Use the return value to get the SaveResult [] and the objects that were actually inserted into db.<br><br>
 	 * 
 	 * Note: You must provide this function a map of sObject of concrete type in order to use this function. We chose a map and not an array 
 	 *  to increase performance. We couldn't internally convert from an array into a map because of Apex restrictions on maps with
@@ -433,15 +437,17 @@ global class SFDCAccessController {
 	 * <PRE>
 	 * try {
 	 *     Contact [] arr = [select LastName,id from Contact];
-	 *     Database.SaveResult[] res = ESAPI.accessController().updateAsUser(new Map&lt;ID, Contact&gt;(arr), new List&lt;String&gt;{'LastName'});
+	 *     SFDCAccessControlResults.UpdateResults res;
+	 *     res = ESAPI.accessController().updateAsUser(new Map&lt;ID, Contact&gt;(arr), new List&lt;String&gt;{'LastName'});
+	 *     arr = res.getUpdatedObjects();
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
 	 * </PRE>
 	 * 
-	 * @return A list of Database.SaveResult objects. Use these objects to identify which objects were successfully updated.
+	 * @return A SFDCAccessControlResults.UpdateResults object.
 	 */
-	global Database.SaveResult[] updateAsUser(Map<ID, sObject> objMap, List<String> fieldsToUpdate) {
+	global SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> objMap, List<String> fieldsToUpdate) {
 		// call updateAsUser using specific instance based on current sharing mode
 		return getACImpl().updateAsUser(objMap, fieldsToUpdate);
 	}
@@ -456,13 +462,15 @@ global class SFDCAccessController {
 	 * <PRE>
 	 * try {
 	 *     Contact [] arr = [select LastName,id from Contact];
-	 *     Database.SaveResult[] res = ESAPI.accessController().updateAsUser(new Map&lt;ID, Contact&gt;(arr), new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+	 *     SFDCAccessControlResults.UpdateResults res;
+	 *     res = ESAPI.accessController().updateAsUser(new Map&lt;ID, Contact&gt;(arr), new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+	 *     arr = res.getUpdatedObjects();
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
 	 * </PRE>
 	 */
-	global Database.SaveResult[] updateAsUser(Map<ID, sObject> objMap, List<Schema.SObjectField> fieldsToUpdate) {
+	global SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> objMap, List<Schema.SObjectField> fieldsToUpdate) {
 		// call updateAsUser using specific instance based on current sharing mode
 		return getACImpl().updateAsUser(objMap, fieldsToUpdate);
 	}
@@ -499,15 +507,16 @@ global class SFDCAccessController {
 	 * <PRE>
 	 * try {
 	 *     Contact [] arr = [select LastName,id from Contact];
-	 *     Database.DeleteResult[] res = ESAPI.accessController().deleteAsUser(arr);
+	 *     SFDCAccessControlResults.DeleteResults res;
+	 *     res = ESAPI.accessController().deleteAsUser(arr);
 	 * } catch (SFDCAccessControlException e) {
 	 *     // error handling
 	 * }
 	 * </PRE>
 	 * 
-	 * @return A list of Database.DeleteResult objects. Use these objects to identify which objects were successfully deleted. 
+	 * @return A SFDCAccessControlResults.DeleteResults object.
 	 */
-	global Database.DeleteResult[] deleteAsUser(SObject [] someObjs) {
+	global SFDCAccessControlResults.DeleteResults deleteAsUser(SObject [] someObjs) {
 		// call deleteAsUser using specific instance based on current sharing mode
 		return getACImpl().deleteAsUser(someObjs);
 	}
@@ -787,7 +796,7 @@ global class SFDCAccessController {
 		 *		ALL_OR_NONE - if any of the records can't be inserted, don't insert any.
 		 * In addition throw an exception if the user does not have the CREATE permission on the object.
 		 */
-		public Database.SaveResult[] insertAsUser(SObject [] devObjs, List<String> fieldsToSet) {
+		public SFDCAccessControlResults.InsertResults insertAsUser(SObject [] devObjs, List<String> fieldsToSet) {
 			if (devObjs == null || devObjs.size() == 0 || fieldsToSet == null || fieldsToSet.size() == 0)
 				throw new AccessControlDmlException('null or empty parameter');
 			
@@ -837,17 +846,20 @@ global class SFDCAccessController {
 				cleanObjs.add(cleanObj);
 			}
 			
+			Database.SaveResult [] results = null;
 			try {
 				// call dbInsert() to enforce sharing rules if required
-				return dbInsert(cleanObjs);
+				results = dbInsert(cleanObjs);
 			} catch (Exception e) {
 				throw new AccessControlDmlException('Failed to insert objects');
 			}
+			
+			return new SFDCAccessControlResults.InsertResults(cleanObjs, results);
 		}
 		
 		/* Same as insertAsUser(SObject [], List&lt;String&gt;) but with Schema.SObjectField instead of string.
 		 */
-		public Database.SaveResult[] insertAsUser(SObject [] devObjs, List<Schema.SObjectField> fieldsToSet) {
+		public SFDCAccessControlResults.InsertResults insertAsUser(SObject [] devObjs, List<Schema.SObjectField> fieldsToSet) {
 			if (devObjs == null || devObjs.size() == 0 || fieldsToSet == null || fieldsToSet.size() == 0)
 				throw new AccessControlDmlException('null or empty parameter');
 			
@@ -895,12 +907,15 @@ global class SFDCAccessController {
 				cleanObjs.add(cleanObj);
 			}
 			
+			Database.SaveResult [] results = null;
 			try {
 				// call dbInsert() to enforce sharing rules if required
-				return dbInsert(cleanObjs);
+				results = dbInsert(cleanObjs);
 			} catch (Exception e) {
 				throw new AccessControlDmlException('Failed to insert objects');
 			}
+			
+			return new SFDCAccessControlResults.InsertResults(cleanObjs, results);
 		}
 		
 		/* Check to see if the user can update this object.
@@ -1022,7 +1037,7 @@ global class SFDCAccessController {
 		 *		ALL_OR_NONE - if any of the records can't be updated by the user, throw an exception and don't update any.
 		 * In addition throw an exception if the user does not have the UPDATE permission on the object. 
 		 */
-		public Database.SaveResult[] updateAsUser(Map<ID, sObject> devMap, List<String> fieldsToUpdate) {
+		public SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> devMap, List<String> fieldsToUpdate) {
 			if (devMap == null || devMap.size() == 0 || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
 				throw new AccessControlDmlException('null or empty parameter');
 
@@ -1083,17 +1098,20 @@ global class SFDCAccessController {
 				}
 			}
 			
+			Database.SaveResult [] results = null;
 			try {
 				// call dbUpdate() to enforce sharing rules if required
-				return dbUpdate(cleanObjs);
+				results = dbUpdate(cleanObjs);
 			} catch (Exception e) {
 				throw new AccessControlDmlException('Failed to update objects');
 			}
+			
+			return new SFDCAccessControlResults.UpdateResults(cleanObjs, results);
 		}
 		
 		/* Same as updateAsUser(Map&lt;ID, sObject&gt;, List&lt;String&gt;) but with Schema.SObjectField instead of string.
 		 */
-		public Database.SaveResult[] updateAsUser(Map<ID, sObject> devMap, List<Schema.SObjectField> fieldsToUpdate) {
+		public SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> devMap, List<Schema.SObjectField> fieldsToUpdate) {
 			if (devMap == null || devMap.size() == 0 || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
 				throw new AccessControlDmlException('null or empty parameter');
 
@@ -1150,12 +1168,15 @@ global class SFDCAccessController {
 				}
 			}
 			
+			Database.SaveResult [] results = null;
 			try {
 				// call dbUpdate() to enforce sharing rules if required
-				return dbUpdate(cleanObjs);
+				results = dbUpdate(cleanObjs);
 			} catch (Exception e) {
 				throw new AccessControlDmlException('Failed to update objects');
 			}
+			
+			return new SFDCAccessControlResults.UpdateResults(cleanObjs, results);
 		}
 
 		/* Check to see if the user can delete this object. Throw exception if not. If he can, delete the object.
@@ -1185,7 +1206,7 @@ global class SFDCAccessController {
 		 * 		BEST_EFFORT - just delete the records that the user can delete.
 		 *		ALL_OR_NONE - if any of the records can't be deleted by the user, don't delete any.
 		 */
-		public Database.DeleteResult[] deleteAsUser(SObject [] devObjs) {
+		public SFDCAccessControlResults.DeleteResults deleteAsUser(SObject [] devObjs) {
 			if (devObjs == null || devObjs.size() == 0)
 				throw new AccessControlDmlException('null parameter');
 			
@@ -1197,12 +1218,15 @@ global class SFDCAccessController {
 														d.getName(),
 														null);
 
+			Database.DeleteResult [] results = null;
 			try {
 				// call dbDelete() to enforce sharing rules if required
-				return dbDelete(devObjs);
+				results = dbDelete(devObjs);
 			} catch (Exception e) {
 				throw new AccessControlDmlException('Failed to delete objects');
 			}
+			
+			return new SFDCAccessControlResults.DeleteResults(results);
 		}
     
 		/* Gets a clean object from db.

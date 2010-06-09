@@ -196,8 +196,8 @@ private class testAccessController {
         	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
         	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
-        	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
-        	results = ESAPI.accessController().insertAsUser(arr, new List<Schema.SObjectField>{Contact.LastName});
+        	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'}).getResults();
+        	results = ESAPI.accessController().insertAsUser(arr, new List<Schema.SObjectField>{Contact.LastName}).getResults();
         	
         	System.assert(results.size() == 2, 'Could not insert two objects into db #1');
         	System.assert(results[0].isSuccess() == true, 'Could not insert first object into db #1 [0] - ' + results[0].getErrors());
@@ -224,7 +224,7 @@ private class testAccessController {
         	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
         	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITHOUT);
-        	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
+        	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'}).getResults();
         	
         	arr = [select LastName,id from Contact where Id=:results[0].getId() or Id=:results[1].getId()];
 
@@ -246,7 +246,7 @@ private class testAccessController {
         	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
         	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.INHERIT);
-        	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
+        	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'}).getResults();
         	
         	arr = [select LastName,id from Contact where Id=:results[0].getId() or Id=:results[1].getId()];
 
@@ -257,6 +257,62 @@ private class testAccessController {
         	
         	ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
         	ESAPI.accessController().deleteAsUser(arr);
+        	
+        	// test results class
+	        c1 = new Contact();
+	        c1.LastName = 'ESAPI TestArray5 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        c2 = new Contact();
+	        c2.LastName = 'ESAPI TestArray6 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        arr = new Contact[]{c1, c2};
+        	
+        	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+        	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+        	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+        	
+        	SFDCAccessControlResults.InsertResults insertResults;
+        	sObject [] insertedObjects;
+        	
+        	insertResults = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
+        	
+        	System.assert(insertResults.wasSuccessful() == true, 'insertResults.wasSuccessful() == true');
+        	
+        	results = insertResults.getResults();
+        	System.assert(results.size() == 2, 'results.size() == 2');
+        	
+        	insertedObjects = insertResults.getInsertedObjects();
+        	System.assert(insertedObjects.size() == 2, 'insertedObjects.size() == 2');
+        	System.assert(insertedObjects[0].Id == results[0].getId(), 'insertedObjects[0].Id == results[0].getId()');
+        	System.assert(insertedObjects[1].Id == results[1].getId(), 'insertedObjects[1].Id == results[1].getId()');
+        	
+        	arr = [select LastName,id from Contact where Id=:results[0].getId() or Id=:results[1].getId()];
+
+			System.assert(arr.size() == 2, 'Could not get two objects from db #3');
+			
+			arr[0].LastName = 'ESAPI TestArray5 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+			arr[1].LastName = 'ESAPI TestArray6 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+
+        	SFDCAccessControlResults.UpdateResults updateResults;
+        	sObject [] updatedObjects;
+        	
+        	updateResults = ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+
+        	System.assert(updateResults.wasSuccessful() == true, 'updateResults.wasSuccessful() == true');
+        	
+        	results = updateResults.getResults();
+        	System.assert(results.size() == 2, 'results.size() == 2');
+        	
+        	updatedObjects = updateResults.getUpdatedObjects();
+        	System.assert(updatedObjects.size() == 2, 'updatedObjects.size() == 2');
+        	System.assert(updatedObjects[0].Id == results[0].getId(), 'updatedObjects[0].Id == results[0].getId()');
+        	System.assert(updatedObjects[1].Id == results[1].getId(), 'updatedObjects[1].Id == results[1].getId()');
+        	
+        	SFDCAccessControlResults.DeleteResults deleteResults;
+        	deleteResults = ESAPI.accessController().deleteAsUser(arr);
+        	
+        	System.assert(deleteResults.wasSuccessful() == true, 'deleteResults.wasSuccessful() == true');
+        	
+        	Database.DeleteResult [] delResults = deleteResults.getResults();
+        	System.assert(delResults.size() == 2, 'delResults.size() == 2');
         	
         } catch (SFDCAccessControlException e) {
         	errStr = 'Access control violation - Type: ' + e.getExceptionType() + ' Reason: '  
