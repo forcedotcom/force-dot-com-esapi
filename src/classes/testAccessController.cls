@@ -53,6 +53,10 @@ private class testAccessController {
 	    	ESAPI.accessController().getCreatableFields(c);
 	    	ESAPI.accessController().getUpdateableFields(c);
 	    	ESAPI.accessController().getViewableFields(c);
+
+	    	ESAPI.accessController().getCreatableFields(Contact.getSObjectType());
+	    	ESAPI.accessController().getUpdateableFields(Contact.getSObjectType());
+	    	ESAPI.accessController().getViewableFields(Contact.getSObjectType());
         	
         	c.LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
         	ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});

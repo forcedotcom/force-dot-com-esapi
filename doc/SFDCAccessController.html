@@ -186,7 +186,7 @@ This class provides access control functionality to enforce CRUD/FLS and sharing
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
 <CODE>&nbsp;List&lt;Schema.SObjectField&gt;</CODE></FONT></TD>
-<TD><CODE><B><A HREF="SFDCAccessController.html#getCreatableFields(SObject)">getCreatableFields</A></B>(SObject&nbsp;someObj)</CODE>
+<TD><CODE><B><A HREF="SFDCAccessController.html#getCreatableFields(Schema.sObjectType)">getCreatableFields</A></B>(Schema.sObjectType&nbsp;objectType)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a list of sobject fields that are createable by the current user session.</TD>
@@ -194,7 +194,15 @@ This class provides access control functionality to enforce CRUD/FLS and sharing
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
 <CODE>&nbsp;List&lt;Schema.SObjectField&gt;</CODE></FONT></TD>
-<TD><CODE><B><A HREF="SFDCAccessController.html#getUpdateableFields(SObject)">getUpdateableFields</A></B>(SObject&nbsp;someObj)</CODE>
+<TD><CODE><B><A HREF="SFDCAccessController.html#getCreatableFields(SObject)">getCreatableFields</A></B>(SObject&nbsp;someObj)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<B>Deprecated.</B>&nbsp;<I>This method is deprecated, use <A HREF="SFDCAccessController.html#getCreatableFields(Schema.sObjectType)">getCreatableFields</A> instead.</I></TD>
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;List&lt;Schema.SObjectField&gt;</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#getUpdateableFields(Schema.sObjectType)">getUpdateableFields</A></B>(Schema.sObjectType&nbsp;objectType)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a list of sobject fields that are updateable by the current user session.</TD>
@@ -202,10 +210,82 @@ This class provides access control functionality to enforce CRUD/FLS and sharing
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
 <CODE>&nbsp;List&lt;Schema.SObjectField&gt;</CODE></FONT></TD>
-<TD><CODE><B><A HREF="SFDCAccessController.html#getViewableFields(SObject)">getViewableFields</A></B>(SObject&nbsp;someObj)</CODE>
+<TD><CODE><B><A HREF="SFDCAccessController.html#getUpdateableFields(SObject)">getUpdateableFields</A></B>(SObject&nbsp;someObj)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<B>Deprecated.</B>&nbsp;<I>This method is deprecated, use <A HREF="SFDCAccessController.html#getUpdateableFields(Schema.sObjectType)">getUpdateableFields</A> instead.</I></TD>
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;List&lt;Schema.SObjectField&gt;</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#getViewableFields(Schema.sObjectType)">getViewableFields</A></B>(Schema.sObjectType&nbsp;objectType)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a list of sobject fields that are viewable by the current user session.</TD>
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;List&lt;Schema.SObjectField&gt;</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#getViewableFields(SObject)">getViewableFields</A></B>(SObject&nbsp;someObj)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<B>Deprecated.</B>&nbsp;<I>This method is deprecated, use <A HREF="SFDCAccessController.html#getViewableFields(Schema.sObjectType)">getViewableFields</A> instead.</I></TD>
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;boolean</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#isAuthorizedToView(Schema.sObjectType, List&lt;Schema.SObjectField&gt;)">isAuthorizedToView</A></B>(Schema.sObjectType&nbsp;objectType, List&lt;Schema.SObjectField&gt;&nbsp;fields)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns true if the current user has view permissions on the given object type and fields.</TD>
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;boolean</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#isAuthorizedToView(Schema.sObjectType, List&lt;String&gt;)">isAuthorizedToView</A></B>(Schema.sObjectType&nbsp;objectType, List&lt;String&gt;&nbsp;fields)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns true if the current user has view permissions on the given object type and fields.</TD>
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;boolean</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#isAuthorizedToCreate(Schema.sObjectType, List&lt;Schema.SObjectField&gt;)">isAuthorizedToCreate</A></B>(Schema.sObjectType&nbsp;objectType, List&lt;Schema.SObjectField&gt;&nbsp;fields)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns true if the current user has create permissions on the given object type and fields.</TD>
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;boolean</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#isAuthorizedToCreate(Schema.sObjectType, List&lt;String&gt;)">isAuthorizedToCreate</A></B>(Schema.sObjectType&nbsp;objectType, List&lt;String&gt;&nbsp;fields)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns true if the current user has create permissions on the given object type and fields.</TD>
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;boolean</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#isAuthorizedToUpdate(Schema.sObjectType, List&lt;Schema.SObjectField&gt;)">isAuthorizedToUpdate</A></B>(Schema.sObjectType&nbsp;objectType, List&lt;Schema.SObjectField&gt;&nbsp;fields)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns true if the current user has update permissions on the given object type and fields.</TD>
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;boolean</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#isAuthorizedToUpdate(Schema.sObjectType, List&lt;String&gt;)">isAuthorizedToUpdate</A></B>(Schema.sObjectType&nbsp;objectType, List&lt;String&gt;&nbsp;fields)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns true if the current user has update permissions on the given object type and fields.</TD>
+</TR>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+<CODE>&nbsp;boolean</CODE></FONT></TD>
+<TD><CODE><B><A HREF="SFDCAccessController.html#isAuthorizedToDelete(Schema.sObjectType)">isAuthorizedToDelete</A></B>(Schema.sObjectType&nbsp;objectType)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns true if the current user has delete permissions on the given object type.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
@@ -423,6 +503,166 @@ public void <B>setArrayOperationMode</B>(<A HREF="SFDCAccessController.Operation
  <PRE>
  try {
      ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+</DL>
+</DD>
+</DL>
+<HR>
+
+<A NAME="isAuthorizedToView(Schema.sObjectType, List&lt;Schema.SObjectField&gt;)"><!-- --></A><H3>
+isAuthorizedToView</H3>
+<PRE>
+public boolean <B>isAuthorizedToView</B>(Schema.sObjectType&nbsp;objectType,
+                         List&lt;Schema.SObjectField&gt;&nbsp;fields)</PRE>
+<DL>
+<DD>Returns true if the current user has view permissions on the given object type and fields. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     boolean canView = ESAPI.accessController().isAuthorizedToView(Contact.getSObjectType(), new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+</DL>
+</DD>
+</DL>
+<HR>
+
+<A NAME="isAuthorizedToView(Schema.sObjectType, List&lt;String&gt;)"><!-- --></A><H3>
+isAuthorizedToView</H3>
+<PRE>
+public boolean <B>isAuthorizedToView</B>(Schema.sObjectType&nbsp;objectType,
+                         List&lt;String&gt;&nbsp;fields)</PRE>
+<DL>
+<DD>Returns true if the current user has view permissions on the given object type and fields. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     boolean canView = ESAPI.accessController().isAuthorizedToView(Contact.getSObjectType(), new List&lt;String&gt;{'LastName'});
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+</DL>
+</DD>
+</DL>
+<HR>
+
+<A NAME="isAuthorizedToCreate(Schema.sObjectType, List&lt;Schema.SObjectField&gt;)"><!-- --></A><H3>
+isAuthorizedToCreate</H3>
+<PRE>
+public boolean <B>isAuthorizedToCreate</B>(Schema.sObjectType&nbsp;objectType,
+                         List&lt;Schema.SObjectField&gt;&nbsp;fields)</PRE>
+<DL>
+<DD>Returns true if the current user has create permissions on the given object type and fields. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     boolean canCreate = ESAPI.accessController().isAuthorizedToCreate(Contact.getSObjectType(), new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+</DL>
+</DD>
+</DL>
+<HR>
+
+<A NAME="isAuthorizedToCreate(Schema.sObjectType, List&lt;String&gt;)"><!-- --></A><H3>
+isAuthorizedToCreate</H3>
+<PRE>
+public boolean <B>isAuthorizedToCreate</B>(Schema.sObjectType&nbsp;objectType,
+                         List&lt;String&gt;&nbsp;fields)</PRE>
+<DL>
+<DD>Returns true if the current user has create permissions on the given object type and fields. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     boolean canCreate = ESAPI.accessController().isAuthorizedToCreate(Contact.getSObjectType(), new List&lt;String&gt;{'LastName'});
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+</DL>
+</DD>
+</DL>
+<HR>
+
+<A NAME="isAuthorizedToUpdate(Schema.sObjectType, List&lt;Schema.SObjectField&gt;)"><!-- --></A><H3>
+isAuthorizedToUpdate</H3>
+<PRE>
+public boolean <B>isAuthorizedToUpdate</B>(Schema.sObjectType&nbsp;objectType,
+                         List&lt;Schema.SObjectField&gt;&nbsp;fields)</PRE>
+<DL>
+<DD>Returns true if the current user has update permissions on the given object type and fields. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     boolean canUpdate = ESAPI.accessController().isAuthorizedToUpdate(Contact.getSObjectType(), new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+</DL>
+</DD>
+</DL>
+<HR>
+
+<A NAME="isAuthorizedToUpdate(Schema.sObjectType, List&lt;String&gt;)"><!-- --></A><H3>
+isAuthorizedToUpdate</H3>
+<PRE>
+public boolean <B>isAuthorizedToUpdate</B>(Schema.sObjectType&nbsp;objectType,
+                         List&lt;String&gt;&nbsp;fields)</PRE>
+<DL>
+<DD>Returns true if the current user has update permissions on the given object type and fields. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     boolean canUpdate = ESAPI.accessController().isAuthorizedToUpdate(Contact.getSObjectType(), new List&lt;String&gt;{'LastName'});
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+</DL>
+</DD>
+</DL>
+<HR>
+
+<A NAME="isAuthorizedToDelete(Schema.sObjectType)"><!-- --></A><H3>
+isAuthorizedToDelete</H3>
+<PRE>
+public boolean <B>isAuthorizedToDelete</B>(Schema.sObjectType&nbsp;objectType)</PRE>
+<DL>
+<DD>Returns true if the current user has delete permissions on the given object type. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     boolean canDelete = ESAPI.accessController().isAuthorizedToDelete(Contact.getSObjectType());
  } catch (SFDCAccessControlException e) {
      // error handling
  }
@@ -761,11 +1001,35 @@ public <A HREF="SFDCAccessControlResults.DeleteResults.html" title="class in &lt
 </DL>
 <HR>
 
+<A NAME="getViewableFields(Schema.sObjectType)"><!-- --></A><H3>
+getViewableFields</H3>
+<PRE>
+public List&lt;Schema.SObjectField&gt; <B>getViewableFields</B>(Schema.sObjectType&nbsp;objectType)</PRE>
+<DL>
+<DD>Return a list of sobject fields that are viewable by the current user session. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Schema.SObjectField[] viewableFields = ESAPI.accessController().getViewableFields(Contact.getSObjectType());
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+</DL>
+</DD>
+</DL>
+<HR>
+
 <A NAME="getViewableFields(SObject)"><!-- --></A><H3>
 getViewableFields</H3>
 <PRE>
 public List&lt;Schema.SObjectField&gt; <B>getViewableFields</B>(SObject&nbsp;someObj)</PRE>
 <DL>
+<DD><B>Deprecated.</B>&nbsp;<I>This method is deprecated, use <A HREF="SFDCAccessController.html#getViewableFields(Schema.sObjectType)">getViewableFields</A> instead.</I>
+<P>
 <DD>Return a list of sobject fields that are viewable by the current user session. <br><br>
  
  Example:<br>
@@ -784,11 +1048,35 @@ public List&lt;Schema.SObjectField&gt; <B>getViewableFields</B>(SObject&nbsp;som
 </DL>
 <HR>
 
+<A NAME="getUpdateableFields(Schema.sObjectType)"><!-- --></A><H3>
+getUpdateableFields</H3>
+<PRE>
+public List&lt;Schema.SObjectField&gt; <B>getUpdateableFields</B>(Schema.sObjectType&nbsp;objectType)</PRE>
+<DL>
+<DD>Return a list of sobject fields that are updateable by the current user session. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Schema.SObjectField[] updateableFields = ESAPI.accessController().getUpdateableFields(Contact.getSObjectType());
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+</DL>
+</DD>
+</DL>
+<HR>
+
 <A NAME="getUpdateableFields(SObject)"><!-- --></A><H3>
 getUpdateableFields</H3>
 <PRE>
 public List&lt;Schema.SObjectField&gt; <B>getUpdateableFields</B>(SObject&nbsp;someObj)</PRE>
 <DL>
+<DD><B>Deprecated.</B>&nbsp;<I>This method is deprecated, use <A HREF="SFDCAccessController.html#getUpdateableFields(Schema.sObjectType)">getUpdateableFields</A> instead.</I>
+<P>
 <DD>Return a list of sobject fields that are updateable by the current user session. <br><br>
  
  Example:<br>
@@ -807,11 +1095,35 @@ public List&lt;Schema.SObjectField&gt; <B>getUpdateableFields</B>(SObject&nbsp;s
 </DL>
 <HR>
 
+<A NAME="getCreatableFields(Schema.sObjectType)"><!-- --></A><H3>
+getCreatableFields</H3>
+<PRE>
+public List&lt;Schema.SObjectField&gt; <B>getCreatableFields</B>(Schema.sObjectType&nbsp;objectType)</PRE>
+<DL>
+<DD>Returns a list of sobject fields that are createable by the current user session. <br><br>
+ 
+ Example:<br>
+ <PRE>
+ try {
+     Schema.SObjectField[] createableFields = ESAPI.accessController().getCreatableFields(Contact.getSObjectType());
+ } catch (SFDCAccessControlException e) {
+     // error handling
+ }
+ </PRE>
+<P>
+<DD><DL>
+</DL>
+</DD>
+</DL>
+<HR>
+
 <A NAME="getCreatableFields(SObject)"><!-- --></A><H3>
 getCreatableFields</H3>
 <PRE>
 public List&lt;Schema.SObjectField&gt; <B>getCreatableFields</B>(SObject&nbsp;someObj)</PRE>
 <DL>
+<DD><B>Deprecated.</B>&nbsp;<I>This method is deprecated, use <A HREF="SFDCAccessController.html#getCreatableFields(Schema.sObjectType)">getCreatableFields</A> instead.</I>
+<P>
 <DD>Returns a list of sobject fields that are createable by the current user session. <br><br>
  
  Example:<br>

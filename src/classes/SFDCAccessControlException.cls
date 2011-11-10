@@ -43,7 +43,11 @@ global with sharing class SFDCAccessControlException extends Exception {
 		/**
 		 * This error type is a generic record not found error. This can be due to record does not exist, sharing violation, or other errors. 
 		 */
-		NO_RECORD_FOUND}
+		NO_RECORD_FOUND,
+		/**
+		 * This error type is a generic field not found error. 
+		 */
+		FIELD_NOT_FOUND}
 
 	/**
 	 * ExceptionReason - this enum defines the different reasons for the exception type.

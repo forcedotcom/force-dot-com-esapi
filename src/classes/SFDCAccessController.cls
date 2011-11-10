@@ -122,9 +122,19 @@ global class SFDCAccessController {
 		void deleteAsUser(SObject someObj);
 		SFDCAccessControlResults.DeleteResults deleteAsUser(SObject [] someObjs);
 		
-		List<Schema.SObjectField> getViewableFields(SObject someObj);
-		List<Schema.SObjectField> getUpdateableFields(SObject someObj);
-		List<Schema.SObjectField> getCreatableFields(SObject someObj);
+		List<Schema.SObjectField> getViewableFields(SObjectType someType);
+		List<Schema.SObjectField> getUpdateableFields(SObjectType someType);
+		List<Schema.SObjectField> getCreatableFields(SObjectType someType);
+		
+		boolean isAuthorizedToView(Schema.SObjectType someType, List<String> fieldNames);
+		boolean isAuthorizedToCreate(Schema.SObjectType someType, List<String> fieldNames);
+		boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<String> fieldNames);
+		
+		boolean isAuthorizedToView(Schema.SObjectType someType, List<Schema.SObjectField> fields);
+		boolean isAuthorizedToCreate(Schema.SObjectType someType, List<Schema.SObjectField> fields);
+		boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<Schema.SObjectField> fields);
+		
+		boolean isAuthorizedToDelete(Schema.SObjectType someType);
 	}
 	
 	/* instance variables */
@@ -533,9 +543,26 @@ global class SFDCAccessController {
 	 *     // error handling
 	 * }
 	 * </PRE> 
-	 */ 
-	public List<Schema.SObjectField> getViewableFields(SObject someObj) {
-		return getACImpl().getViewableFields(someObj);
+	 * @deprecated
+	 */ 	
+	global List<Schema.SObjectField> getViewableFields(SObject someObj) {
+		return getACImpl().getViewableFields(someObj.getSObjectType());
+	}		
+		
+	/**
+	 * Return a list of sobject fields that are viewable by the current user session. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Schema.SObjectField[] viewableFields = ESAPI.accessController().getViewableFields(Contact.getSObjectType());
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE> 
+	 */ 	
+	global List<Schema.SObjectField> getViewableFields(SObjectType someType) {
+		return getACImpl().getViewableFields(someType);
 	}
         
 	/**
@@ -550,9 +577,26 @@ global class SFDCAccessController {
 	 *     // error handling
 	 * }
 	 * </PRE>
+	 * @deprecated
 	 */ 
-	public List<Schema.SObjectField> getUpdateableFields(SObject someObj) {
-		return getACImpl().getUpdateableFields(someObj);
+	global List<Schema.SObjectField> getUpdateableFields(SObject someObj) {
+		return getACImpl().getUpdateableFields(someObj.getSObjectType());
+	}
+
+	/**
+	 * Return a list of sobject fields that are updateable by the current user session. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Schema.SObjectField[] updateableFields = ESAPI.accessController().getUpdateableFields(Contact.getSObjectType());
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 */ 
+	global List<Schema.SObjectField> getUpdateableFields(SObjectType someType) {
+		return getACImpl().getUpdateableFields(someType);
 	}
     
 	/**
@@ -567,27 +611,156 @@ global class SFDCAccessController {
 	 *     // error handling
 	 * }
 	 * </PRE>
+	 * @deprecated
 	 */ 
-	public List<Schema.SObjectField> getCreatableFields(SObject someObj) {
-		return getACImpl().getCreatableFields(someObj);
+	global List<Schema.SObjectField> getCreatableFields(SObject someObj) {
+		return getACImpl().getCreatableFields(someObj.getSObjectType());
+	}
+
+	/**
+	 * Returns a list of sobject fields that are createable by the current user session. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     Schema.SObjectField[] createableFields = ESAPI.accessController().getCreatableFields(Contact.getSObjectType());
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 */ 
+	global List<Schema.SObjectField> getCreatableFields(SObjectType someType) {
+		return getACImpl().getCreatableFields(someType);
+	}
+
+	/**
+	 * Returns true if the current user has view permissions on the given object type and fields. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     boolean canView = ESAPI.accessController().isAuthorizedToView(Contact.getSObjectType(), new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 */ 
+	global boolean isAuthorizedToView(Schema.SObjectType someType, List<Schema.SObjectField> fields) {
+		return getACImpl().isAuthorizedToView(someType, fields);
+	}
+
+	/**
+	 * Returns true if the current user has view permissions on the given object type and fields. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     boolean canView = ESAPI.accessController().isAuthorizedToView(Contact.getSObjectType(), new List&lt;String&gt;{'LastName'});
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 */ 
+	global boolean isAuthorizedToView(Schema.SObjectType someType, List<String> fields) {
+		return getACImpl().isAuthorizedToView(someType, fields);
+	}
+
+	/**
+	 * Returns true if the current user has create permissions on the given object type and fields. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     boolean canCreate = ESAPI.accessController().isAuthorizedToCreate(Contact.getSObjectType(), new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 */ 
+	global boolean isAuthorizedToCreate(Schema.SObjectType someType, List<Schema.SObjectField> fields) {
+		return getACImpl().isAuthorizedToCreate(someType, fields);
+	}
+	
+	/**
+	 * Returns true if the current user has create permissions on the given object type and fields. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     boolean canCreate = ESAPI.accessController().isAuthorizedToCreate(Contact.getSObjectType(), new List&lt;String&gt;{'LastName'});
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 */ 
+	global boolean isAuthorizedToCreate(Schema.SObjectType someType, List<String> fields) {
+		return getACImpl().isAuthorizedToCreate(someType, fields);
+	}
+	
+	/**
+	 * Returns true if the current user has update permissions on the given object type and fields. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     boolean canUpdate = ESAPI.accessController().isAuthorizedToUpdate(Contact.getSObjectType(), new List&lt;Schema.SObjectField&gt;{Contact.LastName});
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 */ 
+	global boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<Schema.SObjectField> fields) {
+		return getACImpl().isAuthorizedToUpdate(someType, fields);
+	}
+	
+	/**
+	 * Returns true if the current user has update permissions on the given object type and fields. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     boolean canUpdate = ESAPI.accessController().isAuthorizedToUpdate(Contact.getSObjectType(), new List&lt;String&gt;{'LastName'});
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 */ 
+	global boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<String> fields) {
+		return getACImpl().isAuthorizedToUpdate(someType, fields);
+	}
+
+	/**
+	 * Returns true if the current user has delete permissions on the given object type. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * try {
+	 *     boolean canDelete = ESAPI.accessController().isAuthorizedToDelete(Contact.getSObjectType());
+	 * } catch (SFDCAccessControlException e) {
+	 *     // error handling
+	 * }
+	 * </PRE>
+	 */ 
+	global boolean isAuthorizedToDelete(Schema.SObjectType someType) {
+		return getACImpl().isAuthorizedToDelete(someType);
 	}
 	
 	/* This internal class does most of the actual CRUD/FLS work - you should never create instances of this class
 	 * instead you should create instances of the three classes that inherit fomr this one which enfocre also sharing
 	 */
-	private virtual class AccessControllerInternal implements AccessControllerInterface {
+    private abstract class AccessControllerInternal implements AccessControllerInterface {
 	
 		private OperationMode omode; // the current operation mode of this instance.
 		private Boolean arrayAllOrNoneParam; // the current array operation mode param of this instance. (as provided to the database methods second argument)
 		
 		// These db... helper functions are just place holders. They are overwritten in the three sharing mode classes.
-		private virtual List<SObject> dbQuery(String query) { return null; }
-		private virtual void dbInsert(sObject obj) {}
-		private virtual Database.SaveResult[] dbInsert(sObject [] objs) { return null; }
-		private virtual void dbUpdate(sObject obj) {}
-		private virtual Database.SaveResult[] dbUpdate(sObject [] objs) { return null; }
-		private virtual void dbDelete(sObject obj) {}
-		private virtual Database.DeleteResult[] dbDelete(sObject [] objs) { return null; }
+        private abstract List<SObject> dbQuery(String query);
+        private abstract void dbInsert(sObject obj);
+        private abstract Database.SaveResult[] dbInsert(sObject [] objs);
+        private abstract void dbUpdate(sObject obj);
+        private abstract Database.SaveResult[] dbUpdate(sObject [] objs);
+        private abstract void dbDelete(sObject obj);
+        private abstract Database.DeleteResult[] dbDelete(sObject [] objs);
 		
 		private void setOperationMode(OperationMode omode) {
 			if (omode == null)
@@ -612,8 +785,8 @@ global class SFDCAccessController {
 		}	
 
 		// Shortcut function
-		public Map<String,Schema.SObjectField> getFieldMap(SObject someObj){
-			return someObj.getSObjectType().getDescribe().fields.getMap();
+		public Map<String,Schema.SObjectField> getFieldMap(SObjectType someType){
+			return SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(someType);
 		}
 
 		/* This is used because the get*Fields() functions return lists of
@@ -630,7 +803,7 @@ global class SFDCAccessController {
     
 		/* Return a list of sobject fields that are viewable by this user 
 		 * (i.e. isAccessible() returns true)
-		 * This is the optimized version when the fieldMap is already availabl
+		 * This is the optimized version when the fieldMap is already available
 		 */
 		public List<Schema.SObjectField> getViewableFields(Map<String,Schema.SObjectField> fieldsMap) {
 			List<Schema.SObjectField> fields = new List<Schema.SObjectField>{};
@@ -644,11 +817,85 @@ global class SFDCAccessController {
 		
 		/* Return a list of sobject fields that are viewable by this user 
 		 */ 
-		public List<Schema.SObjectField> getViewableFields(SObject someObj) {
-			Map<String,Schema.SObjectField> fieldsMap = getFieldMap(someObj);
+		public List<Schema.SObjectField> getViewableFields(SObjectType someType) {
+			Map<String,Schema.SObjectField> fieldsMap = getFieldMap(someType);
 			return getViewableFields(fieldsMap);
 		}
-        
+		
+		public boolean isAuthorizedToView(Schema.SObjectType someType, List<Schema.SObjectField> fields) {
+			// check at object-level first
+			if (!someType.getDescribe().isAccessible()){
+				return false;
+			}
+			
+			// check each field
+			for (Schema.SObjectField f : fields) {
+				if (!f.getDescribe().isAccessible()){
+					return false;
+				}
+			}
+			return true;
+		}
+		
+		public boolean isAuthorizedToView(Schema.SObjectType someType, List<String> fieldNames) {
+			Schema.DescribeSObjectResult objDesc = someType.getDescribe();
+			if (!objDesc.isAccessible()){
+				return false;
+			}
+			Map<String, Schema.SObjectField> fMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(someType);
+			for (String f : fieldNames) {
+				Schema.SObjectField sObjectFld = fMap.get(f);
+				if (sObjectFld == null) {
+					throw new SFDCAccessControlException('Field not found', 
+															SFDCAccessControlException.ExceptionType.FIELD_NOT_FOUND, 
+															SFDCAccessControlException.ExceptionReason.GENERIC,
+															objDesc.getName(),
+															f);
+				}
+				if (!sObjectFld.getDescribe().isAccessible()){
+					return false;
+				}
+			}
+			return true;
+		}
+       
+		public boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<Schema.SObjectField> fields) {
+			// check at object-level first
+			if (!someType.getDescribe().isUpdateable()){
+				return false;
+			}
+			
+			// check each field
+			for (Schema.SObjectField f : fields) {
+				if (!f.getDescribe().isUpdateable()){
+					return false;
+				}
+			}
+			return true;
+		}
+		
+		public boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<String> fieldNames) {
+			Schema.DescribeSObjectResult objDesc = someType.getDescribe();
+			if(!objDesc.isUpdateable()){
+				return false;
+			}
+			Map<String, Schema.SObjectField> fMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(someType);
+			for (String f : fieldNames) {
+				Schema.SObjectField sObjectFld = fMap.get(f);
+				if (sObjectFld == null) {
+					throw new SFDCAccessControlException('Field not found', 
+															SFDCAccessControlException.ExceptionType.FIELD_NOT_FOUND, 
+															SFDCAccessControlException.ExceptionReason.GENERIC,
+															objDesc.getName(),
+															f);
+				}
+				if (!sObjectFld.getDescribe().isUpdateable()){
+					return false;
+				}
+			}
+			return true;
+		}
+		
 		/* Returns a list of sobject fields that are updateable by this user.
 		 * This is the optimized version when the fieldMap is already available
 		 */ 
@@ -664,8 +911,8 @@ global class SFDCAccessController {
 		
 		/* Returns a list of sobject fields that are updateable by this user.
 		 */ 
-		public List<Schema.SObjectField> getUpdateableFields(SObject someObj) {
-			Map<String,Schema.SObjectField> fieldsMap = getFieldMap(someObj);
+		public List<Schema.SObjectField> getUpdateableFields(SObjectType someType) {
+			Map<String,Schema.SObjectField> fieldsMap = getFieldMap(someType);
 			return getUpdateableFields(fieldsMap);
 		}
     
@@ -682,11 +929,48 @@ global class SFDCAccessController {
 			return fields;
 		}
 		
-		public List<Schema.SObjectField> getCreatableFields(SObject someObj) {
-			Map<String,Schema.SObjectField> fieldsMap = getFieldMap(someObj);
+		public List<Schema.SObjectField> getCreatableFields(SObjectType someType) {
+			Map<String,Schema.SObjectField> fieldsMap = getFieldMap(someType);
 			return getCreatableFields(fieldsMap);
 		}
 		
+		public boolean isAuthorizedToCreate(Schema.SObjectType someType, List<String> fieldNames) {
+			Schema.DescribeSObjectResult objDesc = someType.getDescribe();
+			if (!objDesc.isCreateable()){
+				return false;
+			}
+			Map<String, Schema.SObjectField> fMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(someType);
+			for (String f : fieldNames) {
+				Schema.SObjectField sObjectFld = fMap.get(f);
+				if (sObjectFld == null) {
+					throw new SFDCAccessControlException('Field not found', 
+															SFDCAccessControlException.ExceptionType.FIELD_NOT_FOUND, 
+															SFDCAccessControlException.ExceptionReason.GENERIC,
+															objDesc.getName(),
+															f);
+				}
+				if (!sObjectFld.getDescribe().isCreateable()){
+					return false;
+				}
+			}
+			return true;
+		}
+		
+		public boolean isAuthorizedToCreate(Schema.SObjectType someType, List<Schema.SObjectField> fields) {
+			// check at object-level first
+			if (!someType.getDescribe().isCreateable()){
+				return false;
+			}
+			
+			// check each field
+			for (Schema.SObjectField f : fields) {
+				if (!f.getDescribe().isCreateable()){
+					return false;
+				}
+			}
+			return true;
+		}
+				
 		/* Check to see if the user can create this object.
 		 * If he can, depending on the operation mode do the following:
 		 * 		BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.
@@ -706,7 +990,8 @@ global class SFDCAccessController {
 														d.getName(),
 														null);
 
-			Set<String> creatableFields = fieldsToStringSet(getCreatableFields(d.fields.getMap()));
+			Map<String, Schema.SObjectField> fieldMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(devObj.getSObjectType()); // potentially saves a fields call below
+			Set<String> creatableFields = fieldsToStringSet(getCreatableFields(fieldMap));
 			
 			// start from a fresh sObject of same type and only set fields the user is allowed to set
 			sObject cleanObj = devObj.getSObjectType().newSObject();
@@ -807,8 +1092,8 @@ global class SFDCAccessController {
 														SFDCAccessControlException.ExceptionReason.NO_CREATE,
 														d.getName(),
 														null);
-
-			Set<String> creatableFields = fieldsToStringSet(getCreatableFields(d.fields.getMap()));
+			Map<String, Schema.SObjectField> fieldMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(devObjs.getSObjectType());
+			Set<String> creatableFields = fieldsToStringSet(getCreatableFields(fieldMap));
 			
 			/* 
 			  create a clean array by cloning the array, empty it, and refill the member objects by creating clean ones.
@@ -937,7 +1222,7 @@ global class SFDCAccessController {
 														d.getName(),
 														null);
 														
-			Map<String,Schema.SObjectField> fieldsMap = d.fields.getMap();
+			Map<String,Schema.SObjectField> fieldsMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(devObj.getSObjectType());
 			
 			// first load the existing object as current user (enforcing sharing based on sharing mode)
 			SObject cleanObj = getObject(devObj);
@@ -1055,7 +1340,7 @@ global class SFDCAccessController {
 														d.getName(),
 														null);
 														
-			Map<String,Schema.SObjectField> fieldsMap = d.fields.getMap();
+			Map<String,Schema.SObjectField> fieldsMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(devMap.getSObjectType());
 			
 			// first load the existing objects as current user (enforcing sharing based on sharing mode)
 			SObject [] cleanObjs = getObjects(devMap.values());
@@ -1227,6 +1512,14 @@ global class SFDCAccessController {
 			}
 			
 			return new SFDCAccessControlResults.DeleteResults(results);
+		}
+		
+		/* 
+		 * Check to see if the user can delete this object type.
+		 */
+		public boolean isAuthorizedToDelete(Schema.SObjectType someType) {
+			// we only need to check CRUD
+			return someType.getDescribe().isDeletable();
 		}
     
 		/* Gets a clean object from db.
