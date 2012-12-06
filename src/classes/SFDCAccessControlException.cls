@@ -140,4 +140,13 @@ global with sharing class SFDCAccessControlException extends Exception {
 	global String getText() {
 		return this.eText;
 	}
+
+    /**
+     * Override the getMessage method to avoid getting only script-thrown exception as the exception message
+     * Note : to avoid XSS, make sure to escape text before presenting it to the user.
+     */ 
+    global override String getMessage() {
+        return this.eText;
+    }
+
 }

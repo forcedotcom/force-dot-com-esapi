@@ -33,7 +33,7 @@ global with sharing class ESAPI {
 	/**
 	 * @return the current ESAPI SFDCValidator being used to validate data in this application. 
 	 */
-	public static SFDCValidator validator() {
+	global static SFDCValidator validator() {
 		if (SFDC_validator == null) {
 			SFDC_validator =  new SFDCValidator();
 		}
@@ -43,7 +43,7 @@ global with sharing class ESAPI {
 	/**
 	 * @return the current SFDCEncoder object. This gives the basic encoding functionality as those availabel in VisualForce (HTMLENCODE, JSENCODE, JSINHTMLENCODE and URLENCODE) 
 	 */
-	public static SFDCEncoder encoder() {
+	global static SFDCEncoder encoder() {
 		if (SFDC_encoder == null) {
 			SFDC_encoder =  new SFDCEncoder();
 		} 
@@ -53,7 +53,7 @@ global with sharing class ESAPI {
 	/**
 	 * @return the current ESAPI SFDCAccessController object being used to maintain the access control rules for this application. 
 	 */
-	public static SFDCAccessController accessController() {
+	global static SFDCAccessController accessController() {
 		if (SFDC_accessController == null) {
 			SFDC_accessController = new SFDCAccessController();
 		}
