@@ -306,6 +306,7 @@ private class testValidator {
         intTests.add(new IntTest(null, 1, 2, 'Valid #6', true, true));
         intTests.add(new IntTest('1000000', 500000, 2000000, 'Valid #7', false, true));
         intTests.add(new IntTest('906842624', 906842623, 906842625, 'Valid #8', false, true));
+        intTests.add(new IntTest('+1', -2, 2, 'Valid #9', false, true));
         
         intTests.add(new IntTest('1', 2, 1, 'Invalid #1', false, false));
         intTests.add(new IntTest(null, 1, 2, 'Invalid #2', false, false));
@@ -316,7 +317,6 @@ private class testValidator {
         intTests.add(new IntTest('2.0', 1, 3, 'Invalid #7', false, false));
         intTests.add(new IntTest(' 10', 5, 20, 'Invalid #10', false, false));
         intTests.add(new IntTest('10 ', 5, 20, 'Invalid #11', false, false));
-        intTests.add(new IntTest('+1', -2, 2, 'Invalid #12', false, false)); // this should have been valid but Integer.valueOf() does not like it.
         intTests.add(new IntTest('5899906842624', 906842623, 906842625, 'Invalid #13', false, false)); 
     }
 
