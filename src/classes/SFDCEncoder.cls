@@ -32,7 +32,7 @@ global with sharing class SFDCEncoder {
     private static final String[] JS_ENCODED = new String[] { '\\\\', '\\\'', '\\n', '\\r', '\\"', '\\!--', '\\/', '\\u003C', '\\u003E' };
     
 	private static final String[] JSINHTML_DECODED = new String[] { '&', '\\', '\'', '"', '\r', '\n', '<', '>' };
-	private static final String[] JSINHTML_ENCODED = new String[] { '&amp;', '\\\\', '\\\'', '\\&quot;', '\\r', '\\n', '&lt;', '&gt;' };
+	private static final String[] JSINHTML_ENCODED = new String[] { '\\&amp;', '\\\\', '\\&#39;', '\\&quot;', '\\r', '\\n', '&lt;', '&gt;' };
 
 	/**
 	 * Similar to the VisualForce HTMLENCODE function. <br><br>
