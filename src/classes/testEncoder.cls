@@ -90,11 +90,11 @@ private class testEncoder {
 
         jsInHtmlEncodeTests.add(new EncodeTest('abc', 'abc', 'Valid #1', true));
         jsInHtmlEncodeTests.add(new EncodeTest('abc<b>test</b>def', 'abc&lt;b&gt;test&lt;/b&gt;def', 'Valid #2', true));
-        jsInHtmlEncodeTests.add(new EncodeTest('abc&lt;def', 'abc&amp;lt;def', 'Valid #3', true));
-        jsInHtmlEncodeTests.add(new EncodeTest('abc<fghgfh&lt;<sfdg>&amp;def', 'abc&lt;fghgfh&amp;lt;&lt;sfdg&gt;&amp;amp;def', 'Valid #4', true));
+        jsInHtmlEncodeTests.add(new EncodeTest('abc&lt;def', 'abc\\\\&amp;lt;def', 'Valid #3', true));
+        jsInHtmlEncodeTests.add(new EncodeTest('abc<fghgfh&lt;<sfdg>&amp;def', 'abc&lt;fghgfh\\\\&amp;lt;&lt;sfdg&gt;\\\\&amp;amp;def', 'Valid #4', true));
         jsInHtmlEncodeTests.add(new EncodeTest('abc\'def', 'abc\\&#39;def', 'Valid #5', true));
         jsInHtmlEncodeTests.add(new EncodeTest('abc"def', 'abc\\&quot;def', 'Valid #6', true));
-        jsInHtmlEncodeTests.add(new EncodeTest('abc&def', 'abc\\&amp;def', 'Valid #7', true));
+        jsInHtmlEncodeTests.add(new EncodeTest('abc&def', 'abc\\\\&amp;def', 'Valid #7', true));
         jsInHtmlEncodeTests.add(new EncodeTest('abc\\def', 'abc\\\\def', 'Valid #8', true));
         jsInHtmlEncodeTests.add(new EncodeTest('abc\rdef', 'abc\\rdef', 'Valid #9', true));
         jsInHtmlEncodeTests.add(new EncodeTest('abc\ndef', 'abc\\ndef', 'Valid #10', true));
@@ -169,6 +169,8 @@ private class testEncoder {
                 // if no exception - check if we are expecting a valid test
                 System.assert(t.expectedResult == true, t.errText);
                 // also make sure return value is equal to input
+                System.debug('expected: ' + t.expectedOutput);
+                System.debug('observed: ' + ret);
                 System.assert(ret.equals(t.expectedOutput), t.errText);
             } catch (Exception e) {
                 // if exception - check if we are expecting an invalid test
