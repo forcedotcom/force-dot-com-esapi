@@ -57,7 +57,7 @@ usertext = ESAPI.encoder().SFDC_HTMLENCODE(usertext);
 ```
 
 ###Access Control
-The access control module provides functionality to enforce the Force.com built in access control mechanisms: CRUD, FLS, and Sharing. As described in the apex documentation, apex classes execute in system context and not in the current user context. This is why the platform can't enforce any of the security models. For more details please see "Enforcing CRUD and FLS".
+The access control module provides functionality to enforce the Force.com built in access control mechanisms: CRUD, FLS, and Sharing. As described in the apex documentation, apex classes execute in system context and not in the current user context. This is why the platform can't enforce any of the security models. For more details please see <a href="https://developer.salesforce.com/page/Enforcing_CRUD_and_FLS">Enforcing CRUD and FLS</a>.
 This ESAPI module allows apex classes execute statements such as insert object; as if operating in user context.
 
 For example, if we want to update an object in user context, enforcing sharing rules as well as CRUD and FLS we will use the module in this way:
