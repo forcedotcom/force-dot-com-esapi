@@ -14,9 +14,9 @@ Follow the steps below to get started. For more detailed documentation on this l
 4. Start using it in your other classes.
 
 ###Package Installation
-* Managed package (v0.5): https://sites.secure.force.com/appexchange/listingDetail?listingId=a0N30000009x7hPEAQ
+* Managed package (v0.6): https://sites.secure.force.com/appexchange/listingDetail?listingId=a0N30000009x7hPEAQ
 
-* Un-Managed package (v0.5): https://login.salesforce.com/packaging/installPackage.apexp?p0=04tE0000000Qczg
+* Un-Managed package (v0.6): https://login.salesforce.com/packaging/installPackage.apexp?p0=04tE0000000Qczg
 
 ##Example Code
 
