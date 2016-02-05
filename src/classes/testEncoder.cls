@@ -66,6 +66,8 @@ private class testEncoder {
     private static final EncodeTest [] jsInHtmlEncodeTests = new EncodeTest[]{};
     private static final EncodeTest [] urlEncodeTests = new EncodeTest[]{};
     private static final EncodeTest [] urlEncodeWithEncodingTests = new EncodeTest[]{};
+    private static final EncodeTest [] base64UrlEncodeTests = new EncodeTest[]{};
+
     
     static {
         htmlEncodeTests.add(new EncodeTest('abc', 'abc', 'Valid #1', true));
@@ -130,6 +132,11 @@ private class testEncoder {
         urlEncodeWithEncodingTests.add(new EncodeTest('abc\rdef', 'UTF-16', 'abc%FE%FF%00%0Ddef', 'Valid #7', true));
         urlEncodeWithEncodingTests.add(new EncodeTest('abc\ndef', 'UTF-16', 'abc%FE%FF%00%0Adef', 'Valid #8', true));
         urlEncodeWithEncodingTests.add(new EncodeTest('abc' + EncodingUtil.urlDecode('%D7%A9', 'UTF-8') + 'def', 'UTF-16', 'abc%FE%FF%05%E9def', 'Valid #9', true));
+
+        base64UrlEncodeTests.add(new EncodeTest('a', 'YQ', 'Valid #1', true));
+        base64UrlEncodeTests.add(new EncodeTest('b', 'Yg', 'Valid #2', true));
+        base64UrlEncodeTests.add(new EncodeTest('c', 'Yw', 'Valid #3', true));
+        
     }
 
     static testMethod void testEncoderHtmlEncode() {
@@ -207,5 +214,20 @@ private class testEncoder {
                 System.assert(t.expectedResult == false, t.errText);
             }
         }
-    }    
+    }
+
+    static testMethod void testEncoderBase64UrlEncode() {
+        for (EncodeTest t : base64UrlEncodeTests) {
+            try {
+                String ret = ESAPI.encoder().SFDC_BASE64_URLENCODE(Blob.valueOf(t.inputStr));
+                // if no exception - check if we are expecting a valid test
+                System.assert(t.expectedResult == true, t.errText);
+                // also make sure return value is equal to input
+                System.assert(ret.equals(t.expectedOutput), t.errText);
+            } catch (Exception e) {
+                // if exception - check if we are expecting an invalid test
+                System.assert(t.expectedResult == false, t.errText);
+            }
+        }
+    }  
 }
