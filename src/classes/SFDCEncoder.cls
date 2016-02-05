@@ -109,6 +109,29 @@ global with sharing class SFDCEncoder {
 		return EncodingUtil.urlEncode(input, encoding);
 	}
 
+	/**
+	 * Note : This function always encodes into UTF-8 URL encoding<br><br>
+	 *  
+	 * Note : Even when using this function you should still not trust the input as a full 
+	 *  URL because it may have JS or load data from other domains. this function just makes 
+	 *  sure the input is encoded as proper URL. <br><br>
+	 * 
+	 * Example:<br>
+	 * <PRE>
+	 * //htmlstr is going to be sent to visualforce as html code
+	 * htmlstr = '&lt;img src="data:image/gif;base64,"" + ESAPI.encoder().SFDC_BASE64_URLENCODE(unsafe_text) + '"\' /&gt;';
+	 * </PRE> 
+	 */
+	global String SFDC_BASE64_URLENCODE(final Blob input){
+		if(input == null) {
+			return null;
+		}
+		return EncodingUtil.base64Encode(input)
+		.replace('/', '_')
+		.replace('+', '-')
+		.replaceAll('=+$', '');
+ 	}
+
 	private String ENCODE(String input, String[] fromArr, String[] toArr) {
 		if (input == null || input.length() == 0)
 			return input;
