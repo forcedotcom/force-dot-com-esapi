@@ -18,6 +18,12 @@ Follow the steps below to get started. For more detailed documentation on this l
 
 * Un-Managed package (v0.6): https://login.salesforce.com/packaging/installPackage.apexp?p0=04tE0000000Qczg
 
+* Just latest sources from repo :
+<a href="https://githubsfdeploy.herokuapp.com?owner=forcedotcom&repo=force-dot-com-esapi">
+  <img alt="Deploy to Salesforce"
+       src="https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/src/main/webapp/resources/img/deploy.png">
+</a>
+
 ##Example Code
 
 ###Input Validation:
