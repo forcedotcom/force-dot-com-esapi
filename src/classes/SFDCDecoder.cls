@@ -17,7 +17,7 @@
 /**
  * This class is a basic decoder.
  */
-global with sharing class SFDCEncoder {
+global with sharing class SFDCDecoder {
 
 
     /**
