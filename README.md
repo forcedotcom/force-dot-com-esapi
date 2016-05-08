@@ -17,6 +17,12 @@ Follow the steps below to get started. For more detailed documentation on this l
 
 - Go to the <a href="https://github.com/forcedotcom/force-dot-com-esapi/releases">releases</a> section to get the installation link for both managed and un-managed versions of the ESAPI package.
 
+* Just latest sources from repo :
+<a href="https://githubsfdeploy.herokuapp.com?owner=forcedotcom&repo=force-dot-com-esapi">
+  <img alt="Deploy to Salesforce"
+       src="https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/src/main/webapp/resources/img/deploy.png">
+</a>
+
 ##Example Code
 
 ###Input Validation:
