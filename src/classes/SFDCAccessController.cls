@@ -37,7 +37,11 @@ global class SFDCAccessController {
         /**
          * Will use the class instance that just inherits from the class that calls this class.
          */
-        INHERIT}
+        INHERIT,
+        /**
+         * Will use the class instance that enforces "with sharing". Debugs results
+         */
+        WITH_DEBUG }
 
     /**
      * OperationMode - this enum defines the DB operations mode to be used.
@@ -82,6 +86,8 @@ global class SFDCAccessController {
         private override Database.SaveResult[] dbUpdate(sObject [] objs) { return Database.update(objs, arrayAllOrNoneParam); }
         private override void dbDelete(sObject obj) { delete obj; }
         private override Database.DeleteResult[] dbDelete(sObject [] objs) { return Database.delete(objs, arrayAllOrNoneParam); }
+        //private override Database.UpsertResult[] dbUpsert(sObject [] objs, Schema.SObjectField externalIdField) { return Database.upsert(objs, externalIdField, arrayAllOrNoneParam); }
+        private override Database.UpsertResult[] dbUpsert(sObject [] objs) { return Database.upsert(objs, arrayAllOrNoneParam); }
     }
     
     private without sharing class AccessControllerWithoutSharing extends AccessControllerInternal {
@@ -92,6 +98,8 @@ global class SFDCAccessController {
         private override Database.SaveResult[] dbUpdate(sObject [] objs) { return Database.update(objs, arrayAllOrNoneParam); }
         private override void dbDelete(sObject obj) { delete obj; }
         private override Database.DeleteResult[] dbDelete(sObject [] objs) { return Database.delete(objs, arrayAllOrNoneParam); }
+        //private override Database.UpsertResult[] dbUpsert(sObject [] objs, Schema.SObjectField externalIdField) { return Database.upsert(objs, externalIdField, arrayAllOrNoneParam); }
+        private override Database.UpsertResult[] dbUpsert(sObject [] objs) { return Database.upsert(objs, arrayAllOrNoneParam); }
     }
     
     private class AccessControllerInheritSharing extends AccessControllerInternal{
@@ -102,7 +110,147 @@ global class SFDCAccessController {
         private override Database.SaveResult[] dbUpdate(sObject [] objs) { return Database.update(objs, arrayAllOrNoneParam); }
         private override void dbDelete(sObject obj) { delete obj; }
         private override Database.DeleteResult[] dbDelete(sObject [] objs) { return Database.delete(objs, arrayAllOrNoneParam); }
+        //private override Database.UpsertResult[] dbUpsert(sObject [] objs, Schema.SObjectField externalIdField) { return Database.upsert(objs, externalIdField, arrayAllOrNoneParam); }
+        private override Database.UpsertResult[] dbUpsert(sObject [] objs) { return Database.upsert(objs, arrayAllOrNoneParam); }
     }
+
+    private with sharing class AccessControllerWithSharingDebug extends AccessControllerInternal {
+        private override List<SObject> dbQuery(String query) { return Database.query(query); }
+        private override void dbInsert(sObject obj) { insert obj; }
+        private override Database.SaveResult[] dbInsert(sObject [] objs) { return Database.insert(objs, arrayAllOrNoneParam); }
+        private override void dbUpdate(sObject obj) { update obj; }
+        private override Database.SaveResult[] dbUpdate(sObject [] objs) { return Database.update(objs, arrayAllOrNoneParam); }
+        private override void dbDelete(sObject obj) { delete obj; }
+        private override Database.DeleteResult[] dbDelete(sObject [] objs) { return Database.delete(objs, arrayAllOrNoneParam); }
+        //private override Database.UpsertResult[] dbUpsert(sObject [] objs, Schema.SObjectField externalIdField) { return Database.upsert(objs, externalIdField, arrayAllOrNoneParam); }
+        private override Database.UpsertResult[] dbUpsert(sObject [] objs) {
+            System.debug('AccessControllerWithSharingDebug');
+			Database.UpsertResult[] results = Database.upsert(objs, false); //arrayAllOrNoneParam
+			integer index = 0;
+			for(Database.UpsertResult ur : results) {
+				if(!ur.isSuccess()) {
+					SObject problemRecord = objs.get(index);
+					string message = 'ID:' + ur.getId();
+					for(Database.Error e : ur.getErrors()) {
+						message += '\n Message:' + e.getMessage();
+						message += '\n StatusCode:' + e.getStatusCode();
+						message += '\n Fields:' + e.getFields();
+						message += '\n index: ' + index;
+						message += '\n oli: ' + problemRecord;
+					}
+					System.assert(false, message);
+				}
+				index++;
+			}
+            return results;
+        }
+    }
+
+	/*
+	 * Completely bypass the FLS checks and just directly perform DML actions
+	 */
+	private class AccessControllerOpenAccess extends AccessControllerInternal{
+		private override List<SObject> dbQuery(String query) { return Database.query(query); }
+        private override void dbInsert(sObject obj) { insert obj; }
+        private override Database.SaveResult[] dbInsert(sObject [] objs) { return Database.insert(objs, arrayAllOrNoneParam); }
+        private override void dbUpdate(sObject obj) { update obj; }
+        private override Database.SaveResult[] dbUpdate(sObject [] objs) { return Database.update(objs, arrayAllOrNoneParam); }
+        private override void dbDelete(sObject obj) { delete obj; }
+        private override Database.DeleteResult[] dbDelete(sObject [] objs) { return Database.delete(objs, arrayAllOrNoneParam); }
+        //private override Database.UpsertResult[] dbUpsert(sObject [] objs, Schema.SObjectField externalIdField) { return Database.upsert(objs, externalIdField, arrayAllOrNoneParam); }
+        private override Database.UpsertResult[] dbUpsert(sObject [] objs) { return Database.upsert(objs, arrayAllOrNoneParam); }
+
+		// Override methods from AccessControllerInterface to directly perform operations
+
+		
+
+		//global override SFDCAccessControlResults.InsertResults insertAsUser(SObject [] someObjs, List<String> fieldsToSet) {
+			//Database.SaveResult [] results = Database.insert(someObjs);
+			//return new SFDCAccessControlResults.InsertResults(someObjs, results);
+		//}
+
+		//global override SFDCAccessControlResults.UpdateResults updateAsUser(List<sObject> objs) {
+			//Database.SaveResult [] results = Database.update(objs);
+            //return new SFDCAccessControlResults.UpdateResults(objs, results);
+		//}
+
+		public override boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<Schema.SObjectField> fields) {
+			return true;
+        }
+        
+        public override boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<String> fieldNames) {
+			return true;
+		}
+
+		public override boolean isAuthorizedToUpsert(Schema.SObjectType someType, List<String> fieldNames) {
+			return true;
+		}
+
+        public override boolean isAuthorizedToUpsert(Schema.SObjectType someType, List<String> fieldsToCreate, List<String> fieldsToUpdate) {
+			return true;
+		}
+
+		public override SObject insertAsUser(SObject someObj, List<String> fieldsToSet) {
+			dbInsert(someObj);
+			return someObj;
+		}
+
+		public override SObject insertAsUser(SObject someObj, List<Schema.SObjectField> fieldsToSet) {
+			dbInsert(someObj);
+			return someObj;
+		}
+
+		public override SFDCAccessControlResults.InsertResults insertAsUser(SObject [] devObjs, List<String> fieldsToSet) {
+			Database.SaveResult[] results = dbInsert(devObjs);
+			return new SFDCAccessControlResults.InsertResults(devObjs, results);
+		}
+
+		public override SFDCAccessControlResults.InsertResults insertAsUser(SObject [] devObjs, List<Schema.SObjectField> fieldsToSet) {
+			Database.SaveResult[] results = dbInsert(devObjs);
+			return new SFDCAccessControlResults.InsertResults(devObjs, results);
+		}
+
+        // Directly update the sObjects. Special case they bypassing security checks within package.
+        public SFDCAccessControlResults.UpdateResults updateAsUser(List<sObject> toUpdate) {
+            Database.SaveResult [] results = dbUpdate(toUpdate);
+            return new SFDCAccessControlResults.UpdateResults(toUpdate, results);
+        }
+
+		public override SObject updateAsUser(SObject devObj, List<String> fieldsToUpdate) {
+			dbUpdate(devObj);
+			return devObj;
+		}
+
+		public override SObject updateAsUser(SObject devObj, List<Schema.SObjectField> fieldsToUpdate) {
+			dbUpdate(devObj);
+			return devObj;
+		}
+
+
+		public override SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> devMap, List<String> fieldsToUpdate, Schema.SObjectType devType, List<String> fieldsToAlwaysUpdate) {
+			Database.SaveResult [] results = dbUpdate(devMap.values());
+            return new SFDCAccessControlResults.UpdateResults(devMap.values(), results);
+		}
+
+		public override SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> devMap, List<Schema.SObjectField> fieldsToUpdate, Schema.SObjectType devType) {
+			Database.SaveResult [] results = dbUpdate(devMap.values());
+            return new SFDCAccessControlResults.UpdateResults(devMap.values(), results);
+		}
+
+		public override void deleteAsUser(SObject devObj) {
+			dbDelete(devObj);
+		}
+
+		public override SFDCAccessControlResults.DeleteResults deleteAsUser(SObject [] devObjs) {
+			Database.DeleteResult[] results = dbDelete(devObjs);
+			return new SFDCAccessControlResults.DeleteResults(results);
+		}
+
+        public override SFDCAccessControlResults.UpsertResults upsertAsUser(SObject [] devObjs) {
+            Database.UpsertResult[] upsertResults = dbUpsert(devObjs);
+            return new SFDCAccessControlResults.UpsertResults(devObjs, upsertResults);
+        }
+	}
     
     /* Helper interface : this interface will allow us to have a single interface defintion for all three sharing mode classes.
      *  This type is returned by the helper function getACImpl() so that no matter what object type it is actually returning,
@@ -116,11 +264,13 @@ global class SFDCAccessController {
         
         SObject updateAsUser(SObject someObj, List<String> fieldsToUpdate);
         SObject updateAsUser(SObject someObj, List<Schema.SObjectField> fieldsToUpdate);
-        SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> objMap, List<String> fieldsToUpdate);
-        SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> objMap, List<Schema.SObjectField> fieldsToUpdate);
-        
+        SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> objMap, List<String> fieldsToUpdate, Schema.SObjectType objType, List<String> fieldsToAlwaysUpdate);
+        SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> objMap, List<Schema.SObjectField> fieldsToUpdate, Schema.SObjectType objType);
+                
         void deleteAsUser(SObject someObj);
         SFDCAccessControlResults.DeleteResults deleteAsUser(SObject [] someObjs);
+
+        SFDCAccessControlResults.UpsertResults upsertAsUser(SObject [] devObjs);
         
         List<Schema.SObjectField> getViewableFields(SObjectType someType);
         List<Schema.SObjectField> getUpdateableFields(SObjectType someType);
@@ -129,6 +279,8 @@ global class SFDCAccessController {
         boolean isAuthorizedToView(Schema.SObjectType someType, List<String> fieldNames);
         boolean isAuthorizedToCreate(Schema.SObjectType someType, List<String> fieldNames);
         boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<String> fieldNames);
+		boolean isAuthorizedToUpsert(Schema.SObjectType someType, List<String> fieldNames);
+        boolean isAuthorizedToUpsert(Schema.SObjectType someType, List<String> fieldNamesCreate, List<String> fieldNamesUpdate);
         
         boolean isAuthorizedToView(Schema.SObjectType someType, List<Schema.SObjectField> fields);
         boolean isAuthorizedToCreate(Schema.SObjectType someType, List<Schema.SObjectField> fields);
@@ -138,7 +290,9 @@ global class SFDCAccessController {
     }
     
     /* instance variables */
+	private AccessControllerOpenAccess openAccess; // anything goes access controller for when the org admin finds it all a bit to hard
     private AccessControllerWithSharing acws; // sharing access control object that was created with sharing
+    private AccessControllerWithSharingDebug acwsDebug; // sharing access control object that was created with sharing and additional debug operations
     private AccessControllerWithoutSharing acwos; // sharing access control object that was created without sharing
     private AccessControllerInheritSharing acis; // sharing access control object that was created with sharing inherited from caller
     private SharingMode smode; // the current sharing mode of this instance. We will call the proper instance from the above three based on this value.
@@ -148,10 +302,12 @@ global class SFDCAccessController {
      *  and array operation mode to OperationMode.ALL_OR_NONE.
      */
     global SFDCAccessController() {
-        // init the three access contorl instances to enforce sharing
+        // init the access control instances to enforce sharing
+		openAccess = new AccessControllerOpenAccess();
         acws = new AccessControllerWithSharing();
         acwos = new AccessControllerWithoutSharing();
         acis = new AccessControllerInheritSharing();
+        acwsDebug = new AccessControllerWithSharingDebug();
         
         // init modes
         setSharingMode(SharingMode.WITH); // defaults to with sharing
@@ -185,12 +341,20 @@ global class SFDCAccessController {
      *  This function returns the instance object to use based on the current sharing mode set in smode.
      */
     private AccessControllerInterface getACImpl() {
-        if (smode == SharingMode.WITH)
+        // This was connected to a custom setting
+        boolean bypassSecurityModel = false;
+		if(bypassSecurityModel) {
+			// Allow bypass of the secuirity model if the admin can't grant sufficent profile or permission set to the package.
+			return openAccess;
+		} else if (smode == SharingMode.WITH) {
             return acws;
-        else if (smode == SharingMode.WITHOUT)
+        } else if (smode == SharingMode.WITH_DEBUG) {
+            return acwsDebug;
+        } else if (smode == SharingMode.WITHOUT) {
             return acwos;
-        else // we always enforce smode to be a valid value - so no need to check it here again if null or incorrect value
+        } else { // we always enforce smode to be a valid value - so no need to check it here again if null or incorrect value
             return acis;
+        }
     }
 
     /**
@@ -209,7 +373,7 @@ global class SFDCAccessController {
         if (smode == null)
             throw new AccessControlDmlException('SharingMode must not be null');
             
-        if (smode == SharingMode.WITH || smode == SharingMode.WITHOUT || smode == SharingMode.INHERIT)
+        if (smode == SharingMode.WITH || smode == SharingMode.WITHOUT || smode == SharingMode.INHERIT || smode == SharingMode.WITH_DEBUG)
             this.smode = smode;
         else
             throw new AccessControlDmlException('Invalid value for SharingMode');
@@ -232,7 +396,9 @@ global class SFDCAccessController {
          * Note : sharing mode is set in the outter class, but this is set on the actual instance objects 
          *  because that is where this mode is going to be used)
          */
+		openAccess.setOperationMode(omode);
         acws.setOperationMode(omode);
+        acwsDebug.setOperationMode(omode);
         acwos.setOperationMode(omode);
         acis.setOperationMode(omode);
     }   
@@ -251,10 +417,12 @@ global class SFDCAccessController {
      */
     global void setArrayOperationMode(OperationMode oarrmode) {
         /* set array operation mode into instance objects. 
-         * Note : sharing mode is set in the outter class, but this is set on the actual instance objects 
+         * Note : sharing mode is set in the outer class, but this is set on the actual instance objects 
          *  because that is where this mode is going to be used)
          */
+		openAccess.setArrayOperationMode(oarrmode);
         acws.setArrayOperationMode(oarrmode);
+        acwsDebug.setArrayOperationMode(oarrmode);
         acwos.setArrayOperationMode(oarrmode);
         acis.setArrayOperationMode(oarrmode);
     }
@@ -285,6 +453,131 @@ global class SFDCAccessController {
     global SObject insertAsUser(SObject someObj, List<String> fieldsToSet) {
         // call insertAsUser using specific instance based on current sharing mode
         return getACImpl().insertAsUser(someObj, fieldsToSet);
+    }
+
+	global SObject insertAsUser(SObject someObj) {
+        List<String> fieldsToSet = new List<string>(someObj.getPopulatedFieldsAsMap().keySet());
+        return getACImpl().insertAsUser(someObj, fieldsToSet);
+    }
+
+    // For a single sObject, switch the upsert to either an update or an insert
+    public SObject upsertAsUser(SObject someObj) {
+        if(someObj == null) {
+            return null;
+        }
+        if(someObj.Id != null) {
+            return updateAsUser(someObj);
+        }
+        else {
+            return insertAsUser(someObj);
+        }
+    }
+
+    public SFDCAccessControlResults.UpsertResults upsertAsUser(List<sObject> toUpsert, List<string> fieldsExcluded) {
+        return upsertAsUser(toUpsert, fieldsExcluded, fieldsExcluded);
+    }
+
+    public SFDCAccessControlResults.UpsertResults upsertAsUser(List<sObject> toUpsert, List<String> fieldsExcludedFromCreate, List<String> fieldsExcludedFromUpdate) {
+        if(toUpsert == null || toUpsert.isEmpty()) {
+            return null;
+        }
+
+        Schema.SObjectType someType = toUpsert.getSObjectType();
+        if(someType == null) {
+            // We are dealing with list that potentially has multiple sObject types.
+            System.debug(LoggingLevel.Debug, 'upsertAsUser() Unable to determine single sObject type from input List.');
+            return upsertMultipleSObjectTypesAsUser(toUpsert, fieldsExcludedFromCreate, fieldsExcludedFromUpdate);
+        }
+
+        Set<String> fieldsToCreate = fieldsToUpdateFromSObject(toUpsert[0]);
+        if(fieldsExcludedFromCreate != null && !fieldsExcludedFromCreate.isEmpty()) {
+            fieldsToCreate.removeAll(fieldsExcludedFromCreate);
+        }
+
+        // TODO: What if fieldsExcludedFromUpdate == fieldsExcludedFromCreate? No need to clone...
+        Set<String> fieldsToUpdate = fieldsToCreate.clone();
+        if(fieldsExcludedFromUpdate != null && !fieldsExcludedFromUpdate.isEmpty()) {
+            fieldsToUpdate.removeAll(fieldsExcludedFromUpdate);
+        }
+
+        if(isAuthorizedToUpsert(someType, new List<string>(fieldsToCreate), new List<string>(fieldsToUpdate))) {
+            SFDCAccessControlResults.UpsertResults result = getACImpl().upsertAsUser(toUpsert);
+            return result;
+        } else {
+            throw new SFDCAccessController.AccessControlDmlException('upsertAsUser() - access error upserting '+someType+' records. \nfieldsToCreate: '+fieldsToCreate+' \nfieldsToUpdate: ' + fieldsToUpdate);
+        }
+    }
+
+    private SFDCAccessControlResults.UpsertResults upsertMultipleSObjectTypesAsUser(List<sObject> toUpsert, List<String> fieldsExcludedFromCreate, List<String> fieldsExcludedFromUpdate) {
+        if(toUpsert == null || toUpsert.isEmpty()) {
+            return null;
+        }
+
+        Schema.SObjectType someType = toUpsert.getSObjectType();
+        System.assertEquals(null, someType, 'upsertMultipleSObjectTypesAsUser() SObjectType from List is not expected');
+        
+        // We are dealing with list that potentially has multiple sObject types.
+        Map<Schema.SObjectType, List<sObject>> sObjectTypeToUniformListMap = new Map<Schema.SObjectType, List<sObject>>();
+        Map<Schema.SObjectType, List<Integer>> sObjectTypeToUniformListSourceIndexesMap = new Map<Schema.SObjectType, List<Integer>>();
+
+        Integer index = 0;
+        for(sObject so : toUpsert) {
+            Schema.SObjectType soType = so.getSObjectType();
+            List<sObject> uniformList = null;
+            List<Integer> uniformListIndexes = null;
+            if(sObjectTypeToUniformListMap.containsKey(soType)) {
+                uniformList = sObjectTypeToUniformListMap.get(soType);
+                uniformListIndexes = sObjectTypeToUniformListSourceIndexesMap.get(soType);
+            } else {
+                // Make the list of the actual type
+                String listType = 'List<' + soType + '>';
+                uniformList = (List<SObject>)Type.forName(listType).newInstance();
+                sObjectTypeToUniformListMap.put(soType, uniformList);
+
+                uniformListIndexes = new List<Integer>();
+                sObjectTypeToUniformListSourceIndexesMap.put(soType, uniformListIndexes);
+            }
+            uniformList.add(so);
+            uniformListIndexes.add(index);
+
+            //System.debug(LoggingLevel.Finer, 'upsertMultipleSObjectTypesAsUser() queued: ' + soType + ' at ' + index);
+
+            index++;
+        }
+
+        if(sObjectTypeToUniformListMap.size() == 1) {
+            // There is acutally only one type in the list.
+            //System.debug(LoggingLevel.Debug, 'upsertMultipleSObjectTypesAsUser() processing single list of consistent sObject type');
+            return upsertAsUser(sObjectTypeToUniformListMap.values()[0], fieldsExcludedFromCreate, fieldsExcludedFromUpdate);
+        }
+
+        // NOTE: The ordering of these results will likely differ from the order the sObjects were passed in!
+        // This will make it difficult to extract the resulting IDs.
+        
+        Database.UpsertResult[] combinedUpsertResults = new Database.UpsertResult[toUpsert.size()];
+        List<sObject> upsertedSObjects = new sObject[toUpsert.size()];
+        for(Schema.SObjectType soType : sObjectTypeToUniformListMap.keySet()) {
+            // Verify that this particular sObject has the required perms.
+            List<SObject> soToUpsert = sObjectTypeToUniformListMap.get(soType);
+            List<Integer> uniformListIndexes = sObjectTypeToUniformListSourceIndexesMap.get(soType);
+
+            SFDCAccessControlResults.UpsertResults soResults = upsertAsUser(soToUpsert, fieldsExcludedFromCreate, fieldsExcludedFromUpdate);
+
+            List<Database.UpsertResult> results = soResults.getResults();
+            sObject[] upsertRecords = soResults.getUpsertedObjects();
+            for(integer i = 0; i < upsertRecords.size(); i++) {
+                integer inputIndex = uniformListIndexes[i];
+                sObject upsertedRecord = upsertRecords[i];
+                Database.UpsertResult upsertResult = results[i];
+
+                combinedUpsertResults[inputIndex] = upsertResult;
+                upsertedSObjects[inputIndex] = upsertedRecord;
+
+                //System.debug(LoggingLevel.Finer, 'upsertMultipleSObjectTypesAsUser() upserted ' + upsertResult + ' at index ' + inputIndex + ' i:' + i);
+            }
+        }
+
+        return new SFDCAccessControlResults.UpsertResults(upsertedSObjects, combinedUpsertResults);        
     }
     
     /**
@@ -348,6 +641,23 @@ global class SFDCAccessController {
         return getACImpl().insertAsUser(someObjs, fieldsToSet);
     }
 
+	global SFDCAccessControlResults.InsertResults insertAsUser(List<sObject> someObjs) {
+        
+        if(someObjs == null || someObjs.isEmpty()) {
+            SObject[] devObjs = new List<SObject>();
+			Database.SaveResult[] results = new List<Database.SaveResult>();
+			return new SFDCAccessControlResults.InsertResults(devObjs, results);
+        }
+
+		// Note: This is only going to build up the field set for the first sObject in the collection.
+		// If different sObjects have different fields then they will be ignored.
+		Set<String> keySet = someObjs.get(0).getPopulatedFieldsAsMap().keySet();
+		List<String> fieldsToUpdate = new List<string>(keySet);
+		System.debug('insertAsUser fieldsToUpdate:' + fieldsToUpdate);
+
+        return getACImpl().insertAsUser(someObjs, fieldsToUpdate);
+    }
+
     /**
      * Same as <a href="SFDCAccessController.html#insertAsUser%28sObject[],%20List%3CString%3E%29">
      * <code>insertAsUser(sObject[], List&lt;String&gt;)</code></a> 
@@ -403,6 +713,84 @@ global class SFDCAccessController {
         return getACImpl().updateAsUser(someObj, fieldsToUpdate);
     }
 
+	global SObject updateAsUser(SObject someObj) {
+        Set<String> keySet = fieldsToUpdateFromSObject(someObj);
+
+		List<String> fieldsToSet = new List<string>(keySet);
+		System.debug('updateAsUser fieldsToSet:' + fieldsToSet);
+        return getACImpl().updateAsUser(someObj, fieldsToSet);
+    }
+
+	// Find the sObjects fields that should be updated.
+	public Set<String> fieldsToUpdateFromSObject(SObject someObj) {
+
+		Map<String, Schema.SObjectField> fieldMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(someObj.getSObjectType());
+
+		Set<String> keySet = someObj.getPopulatedFieldsAsMap().keySet().clone();
+		// It is important to clone the set here to allow adds and to avoid changing the underlying Map.
+		// https://salesforce.stackexchange.com/a/207393?noredirect=1
+
+		// Id and other common system only fields shouldn't be included in the fields to update check.
+		keySet.remove('Id');
+		keySet.remove('SystemModstamp');
+		keySet.remove('LastModifiedDate');
+		keySet.remove('LastModifiedById');
+		keySet.remove('CreatedDate');
+		keySet.remove('CreatedById');
+        keySet.remove('IsDeleted');
+		keySet.remove('Owner');
+		for(string fieldName : keySet) {
+			if(fieldName.endsWith('__r')) {
+				keySet.remove(fieldName);
+				continue;
+			}
+			// Code within the managed package won't see namespace in describe
+			//string lookupFieldName = fieldName.replace('namespace__', '');
+            // Code within the managed package WILL see namespace in describe (v43.0)
+            string lookupFieldName = fieldName;
+
+			//System.debug(LoggingLevel.Debug, 'SFDCAccessController.fieldsToUpdateFromSObject() Checking: ' + fieldName + ' with lookupFieldName:' + lookupFieldName);
+
+			Schema.SObjectField fieldInfo = fieldMap.get(lookupFieldName);
+			if(fieldInfo == null) {
+				Schema.DescribeSObjectResult d = someObj.getSObjectType().getDescribe(); 
+				Map<String, Schema.SObjectField> fieldMap2 = d.fields.getMap();
+				lookupFieldName = lookupFieldName.toLowerCase();
+                fieldInfo = fieldMap2.get(lookupFieldName);
+
+				//System.assertNotEquals(null, fieldInfo, 'SFDCAccessController.fieldsToUpdateFromSObject() Failed to find field info for ' + lookupFieldName + '. ' + fieldMap);
+				if(fieldInfo == null) {
+					// Maybe it is a native referece (no __r) but can't be resolved by the relationshipName?
+                    string referenceFieldName = lookupFieldName + 'Id';
+                    fieldInfo = fieldMap2.get(referenceFieldName);
+                    if(fieldInfo != null) {
+                        Schema.DescribeFieldResult describe = fieldInfo.getDescribe();
+                        if(describe.type == DisplayType.REFERENCE && describe.relationshipName == lookupFieldName) {
+                            continue;
+                        }
+                    }
+                    
+                    //System.debug(LoggingLevel.Error, 'SFDCAccessController.fieldsToUpdateFromSObject() Failed to find field info for ['+d.getName()+'].[' + lookupFieldName + '].\n fieldMap:' + fieldMap.keySet() + ' keyset: ' + fieldMap2.keyset());
+					//System.assert(!Test.isRunningTest(), 'SFDCAccessController.fieldsToUpdateFromSObject() Failed to find field info for ['+d.getName()+'].[' + lookupFieldName + '].\n fieldMap:' + fieldMap.keySet());
+                    //for(string key : fieldMap2.keySet()) {
+                        //System.debug(LoggingLevel.Error, 'SFDCAccessController.fieldsToUpdateFromSObject() ['+key+']');
+                    //}
+
+					continue;
+				}
+			}
+			
+			Schema.DescribeFieldResult dfr = fieldInfo.getDescribe();
+			if(dfr.isCalculated()) {
+				// Exclude formula fields
+				//System.debug(LoggingLevel.Debug, 'SFDCAccessController.fieldsToUpdateFromSObject() Excluding Calculated Field ' + fieldName);
+				keySet.remove(fieldName);
+				continue;
+			}
+		}
+		return keySet;
+	}
+
     /**
      * Same as <a href="SFDCAccessController.html#updateAsUser%28SObject,%20List%3CString%3E%29">
      * <code>updateAsUser(SObject, List&lt;String&gt;)</code></a> 
@@ -427,6 +815,92 @@ global class SFDCAccessController {
         return getACImpl().updateAsUser(someObj, fieldsToUpdate);
     }
     
+	global SFDCAccessControlResults.UpdateResults updateAsUser(List<sObject> objs) {
+        if(objs == null) {
+            throw new AccessControlDmlException('objs must not be null');
+        }
+
+        AccessControllerInterface aci = getACImpl();
+        if(aci instanceOf AccessControllerOpenAccess) {
+            // Bypass when not enforcing FLS due to configuration
+            AccessControllerOpenAccess acoa = (AccessControllerOpenAccess)aci;
+            return acoa.updateAsUser(objs);
+        }
+
+		Map<ID, sObject> objMap = convertListToStronglyTypedMap(objs);
+
+		// Note: This is only going to build up the field set for the first sObject in the collection.
+		// If different sObjects have different fields then they will be ignored.
+		Schema.SObjectType objType = objs.get(0).getSObjectType();
+
+		Set<String> keySet = fieldsToUpdateFromSObject(objs.get(0));
+
+		List<String> fieldsToUpdate = new List<string>(keySet);
+		System.debug(LoggingLevel.FINER, 'updateAsUser fieldsToUpdate:' + fieldsToUpdate);
+		System.assertNotEquals(0, fieldsToUpdate.size(), 'SFDCAccessController.fieldsToUpdate() no fields found to update');
+
+		List<String> fieldsToAlwaysUpdate = new List<String>();
+
+        return aci.updateAsUser(objMap, fieldsToUpdate, objType, fieldsToAlwaysUpdate);
+    }
+
+	global SFDCAccessControlResults.UpdateResults updateAsUser(List<sObject> objs, List<String> fieldsToUpdate) {
+		return updateAsUser(objs, fieldsToUpdate, new List<String>());
+	}
+
+	public SFDCAccessControlResults.UpdateResults updateAsUser(List<sObject> objs, List<String> fieldsToUpdate, List<String> fieldsToAlwaysUpdate) {
+        
+		Map<ID, sObject> objMap = convertListToStronglyTypedMap(objs);
+
+        System.assert(!objs.isEmpty(), 'updateAsUser() input objs was empty');
+		Schema.SObjectType objType = objs.get(0).getSObjectType();	
+
+        return getACImpl().updateAsUser(objMap, fieldsToUpdate, objType, fieldsToAlwaysUpdate);
+    }
+
+	private Map<Id, sObject> convertListToStronglyTypedMap(List<sObject> inputList) {
+        // This won't work if the inputList is of a generic sObject type
+		Schema.SObjectType listObjType = inputList.getSObjectType();
+        if(listObjType == null) {
+            // Check if all the sObjects are of the same type, if they are, use that.
+            Schema.SObjectType commonOjType = null;
+            for(sObject sObl : inputList) {
+                Schema.SObjectType sOjType = sObl.getSObjectType();
+                if(commonOjType == null) {
+                    commonOjType = sOjType;
+                } else if (sOjType != commonOjType) {
+                    commonOjType = null;
+                    break;
+                }
+            }
+            if(commonOjType != null) {
+                listObjType = commonOjType;
+            }
+        }
+
+        if(listObjType == null) {
+            // We are dealing with list that potentially has multiple sObject types.
+            System.debug(LoggingLevel.Debug, 'convertListToStronglyTypedMap() Unable to determine single sObject type from input List.');
+            //return updateMultipleSObjectTypesAsUser(inputList);
+
+            // Temp fix is to set AdBookSettings.BypassSecurityModelChecks = true;
+
+            throw new AccessControlDmlException('listObjType must not be null. Likely multiple sObject Types. \n inputList: ' + inputList);
+        }
+
+		// Seems to work. Consider listObjType.getDescribe().getName()
+		Type mapType = Type.forName('Map<Id, '+listObjType+'>');
+        if(mapType == null) {
+            throw new AccessControlDmlException('mapType must not be null. \n listObjType: ' + listObjType);
+        }
+    
+		Map<Id, sObject> outputMap = (Map<Id, sObject>)mapType.newInstance();
+		outputMap.putAll(inputList);
+		System.assertEquals(listObjType, outputMap.getSObjectType());
+
+		return outputMap;
+	}
+
     /**
      * Update the objects with the context of the current user session.<br>
      * Depending on the operation mode and array operation mode do:<br>
@@ -458,8 +932,10 @@ global class SFDCAccessController {
      * @return A SFDCAccessControlResults.UpdateResults object.
      */
     global SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> objMap, List<String> fieldsToUpdate) {
+
+		List<String> fieldsToAlwaysUpdate = new List<String>();
         // call updateAsUser using specific instance based on current sharing mode
-        return getACImpl().updateAsUser(objMap, fieldsToUpdate);
+        return getACImpl().updateAsUser(objMap, fieldsToUpdate, objMap.getSObjectType(), fieldsToAlwaysUpdate);
     }
 
     /**
@@ -482,7 +958,7 @@ global class SFDCAccessController {
      */
     global SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> objMap, List<Schema.SObjectField> fieldsToUpdate) {
         // call updateAsUser using specific instance based on current sharing mode
-        return getACImpl().updateAsUser(objMap, fieldsToUpdate);
+        return getACImpl().updateAsUser(objMap, fieldsToUpdate, objMap.getSObjectType());
     }
 
     /** 
@@ -729,6 +1205,14 @@ global class SFDCAccessController {
         return getACImpl().isAuthorizedToUpdate(someType, fields);
     }
 
+	global boolean isAuthorizedToUpsert(Schema.SObjectType someType, List<String> fields) {
+		return getACImpl().isAuthorizedToUpsert(someType, fields);
+	}
+
+    public boolean isAuthorizedToUpsert(Schema.SObjectType someType, List<String> fieldNamesCreate, List<String> fieldNamesUpdate) {
+        return getACImpl().isAuthorizedToUpsert(someType, fieldNamesCreate, fieldNamesUpdate);
+    }
+
     /**
      * Returns true if the current user has delete permissions on the given object type. <br><br>
      * 
@@ -761,6 +1245,10 @@ global class SFDCAccessController {
         private abstract Database.SaveResult[] dbUpdate(sObject [] objs);
         private abstract void dbDelete(sObject obj);
         private abstract Database.DeleteResult[] dbDelete(sObject [] objs);
+
+        // Won't work. Results in a "Upsert with a field specification requires a concrete SObject type" compile error
+        //private abstract Database.UpsertResult[] dbUpsert(sObject [] objs, Schema.SObjectField externalIdField);
+        private abstract Database.UpsertResult[] dbUpsert(sObject [] objs);
         
         private void setOperationMode(OperationMode omode) {
             if (omode == null)
@@ -859,24 +1347,27 @@ global class SFDCAccessController {
             return true;
         }
        
-        public boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<Schema.SObjectField> fields) {
+        public virtual boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<Schema.SObjectField> fields) {
             // check at object-level first
             if (!someType.getDescribe().isUpdateable()){
+				//System.debug(LoggingLevel.Warn, 'isAuthorizedToUpdate() someType:' + someType + ' is not updateable');
                 return false;
             }
             
             // check each field
             for (Schema.SObjectField f : fields) {
                 if (!f.getDescribe().isUpdateable()){
+					//System.debug(LoggingLevel.Warn, 'isAuthorizedToUpdate() someType:' + someType + ' f:' +f+ ' is not updateable');
                     return false;
                 }
             }
             return true;
         }
         
-        public boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<String> fieldNames) {
+        public virtual boolean isAuthorizedToUpdate(Schema.SObjectType someType, List<String> fieldNames) {
             Schema.DescribeSObjectResult objDesc = someType.getDescribe();
             if(!objDesc.isUpdateable()){
+				//System.debug(LoggingLevel.Warn, 'isAuthorizedToUpdate() someType:' + someType + ' is not updateable');
                 return false;
             }
             Map<String, Schema.SObjectField> fMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(someType);
@@ -890,10 +1381,25 @@ global class SFDCAccessController {
                                                             f);
                 }
                 if (!sObjectFld.getDescribe().isUpdateable()){
+					//System.debug(LoggingLevel.Warn, 'isAuthorizedToUpdate() someType:' + someType + ' sObjectFld:' +sObjectFld+ ' is not updateable');
                     return false;
                 }
             }
             return true;
+        }
+
+		public virtual boolean isAuthorizedToUpsert(Schema.SObjectType someType, List<String> fieldNames) {
+			return isAuthorizedToUpsert(someType, fieldNames, fieldNames);
+		}
+
+        public virtual boolean isAuthorizedToUpsert(Schema.SObjectType someType, List<String> fieldNamesCreate, List<String> fieldNamesUpdate) {
+            return isAuthorizedToCreate(someType, fieldNamesCreate) && isAuthorizedToUpdate(someType, fieldNamesUpdate);
+        }
+
+        public virtual SFDCAccessControlResults.UpsertResults upsertAsUser(SObject[] devObjs) {
+            //System.debug(LoggingLevel.Finest, 'upsertAsUser: ' + devObjs);
+            List<Database.UpsertResult> results = dbUpsert(devObjs);
+            return new SFDCAccessControlResults.UpsertResults(devObjs, results);
         }
         
         /* Returns a list of sobject fields that are updateable by this user.
@@ -935,14 +1441,17 @@ global class SFDCAccessController {
         }
         
         public boolean isAuthorizedToCreate(Schema.SObjectType someType, List<String> fieldNames) {
+            System.assertNotEquals(null, someType, 'isAuthorizedToCreate() SObjectType is required');
             Schema.DescribeSObjectResult objDesc = someType.getDescribe();
             if (!objDesc.isCreateable()){
+				//System.debug(LoggingLevel.Warn, 'isAuthorizedToCreate() someType:' + someType + ' is not creatable');
                 return false;
             }
             Map<String, Schema.SObjectField> fMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(someType);
             for (String f : fieldNames) {
                 Schema.SObjectField sObjectFld = fMap.get(f);
                 if (sObjectFld == null) {
+                    //System.debug(LoggingLevel.Error, 'fmap: ' + Json.serializePretty(fMap.keyset()));
                     throw new SFDCAccessControlException('Field not found', 
                                                             SFDCAccessControlException.ExceptionType.FIELD_NOT_FOUND, 
                                                             SFDCAccessControlException.ExceptionReason.GENERIC,
@@ -950,6 +1459,7 @@ global class SFDCAccessController {
                                                             f);
                 }
                 if (!sObjectFld.getDescribe().isCreateable()){
+					//System.debug(LoggingLevel.Warn, 'isAuthorizedToCreate() someType:' + someType + ' sObjectFld:' +sObjectFld+' is not creatable');
                     return false;
                 }
             }
@@ -959,18 +1469,20 @@ global class SFDCAccessController {
         public boolean isAuthorizedToCreate(Schema.SObjectType someType, List<Schema.SObjectField> fields) {
             // check at object-level first
             if (!someType.getDescribe().isCreateable()){
+				//System.debug(LoggingLevel.Warn, 'isAuthorizedToCreate() someType:' + someType + ' is not creatable');
                 return false;
             }
             
             // check each field
             for (Schema.SObjectField f : fields) {
                 if (!f.getDescribe().isCreateable()){
+					//System.debug(LoggingLevel.Warn, 'isAuthorizedToCreate() someType:' + someType + ' sObjectFld:' +f+' is not creatable');
                     return false;
                 }
             }
             return true;
         }
-                
+		        
         /* Check to see if the user can create this object.
          * If he can, depending on the operation mode do the following:
          *      BEST_EFFORT - just set the fields that both the user can set and that were specified in the fieldsToSet.
@@ -978,7 +1490,7 @@ global class SFDCAccessController {
          * In addition throw an exception if the user does not have the CREATE permission on the object.
          * Returns the cleanObj created and inserted into db. 
          */
-        public SObject insertAsUser(SObject devObj, List<String> fieldsToSet) {
+        public virtual SObject insertAsUser(SObject devObj, List<String> fieldsToSet) {
             if (devObj == null || fieldsToSet == null || fieldsToSet.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
             
@@ -1028,7 +1540,7 @@ global class SFDCAccessController {
         
         /* Same as insertAsUser(SObject, List&lt;String&gt;) but with Schema.SObjectField instead of string.
          */
-        public SObject insertAsUser(SObject devObj, List<Schema.SObjectField> fieldsToSet) {
+        public virtual SObject insertAsUser(SObject devObj, List<Schema.SObjectField> fieldsToSet) {
             if (devObj == null || fieldsToSet == null || fieldsToSet.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
             
@@ -1082,11 +1594,17 @@ global class SFDCAccessController {
          *      ALL_OR_NONE - if any of the records can't be inserted, don't insert any.
          * In addition throw an exception if the user does not have the CREATE permission on the object.
          */
-        public SFDCAccessControlResults.InsertResults insertAsUser(SObject [] devObjs, List<String> fieldsToSet) {
+        public virtual SFDCAccessControlResults.InsertResults insertAsUser(SObject [] devObjs, List<String> fieldsToSet) {
             if (devObjs == null || devObjs.size() == 0 || fieldsToSet == null || fieldsToSet.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
             
-            Schema.DescribeSObjectResult d = devObjs.getSObjectType().getDescribe();
+            Schema.SObjectType someType = devObjs.getSObjectType();
+            if(someType == null) {
+                devObjs = convertToStronglyTypedList(devObjs);
+                someType = devObjs.getSObjectType();
+            }
+
+            Schema.DescribeSObjectResult d = someType.getDescribe();
             if (d.isCreateable() == false) 
                 throw new SFDCAccessControlException('Access Violation', 
                                                         SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
@@ -1112,7 +1630,23 @@ global class SFDCAccessController {
                 // set all fields that were requested and the user has permission to set - throw an exception if a field was requested and user can't set and in ALL_OR_NONE mode           
                 for (String fieldName : fieldsToSet) {
                     fieldName = fieldName.toLowerCase();
-                    if (creatableFields == null || creatableFields.contains(fieldName) == false) {
+
+                    if(fieldName.endsWith('__r')) {
+                        // Skip relationship objects
+                        continue;
+                    } 
+
+                    if(!fieldName.endsWith('__c') && !fieldMap.containsKey(fieldName)) {
+                        // This is likely a relationship field, such as OpportunityLineItem.Opportunity that exists for OpportunityLineItem.OpportunityId
+                        //System.debug('Skipping : ' + fieldName);
+                        continue;
+                    }
+                    
+                    object fieldValue = devObj.get(fieldName);
+
+                    if (fieldValue == null) {
+                        // Nothing to do. We don't need to set the field to null on insert
+                    } else if (creatableFields == null || creatableFields.contains(fieldName) == false) {
                         // creatableFields is either null which means no fields are allowed to be set by user, or is not null but does not contain the current fieldName
                         if (omode == OperationMode.ALL_OR_NONE)
                             // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
@@ -1121,12 +1655,11 @@ global class SFDCAccessController {
                                                 SFDCAccessControlException.ExceptionReason.NO_CREATE,
                                                 d.getName(),
                                                 fieldName);
-                    }
-                    else {
+                    } else {
                         // user has permission to set fieldName and it was request by the developer - so set it
                         // if the developer did not set this field and it is required, we should get an exception 
                         // when we set it here, or when we perform the actual insert.
-                        cleanObj.put(fieldName, devObj.get(fieldName));
+                        cleanObj.put(fieldName, fieldValue);
                     }
                 }
                 
@@ -1143,10 +1676,29 @@ global class SFDCAccessController {
             
             return new SFDCAccessControlResults.InsertResults(cleanObjs, results);
         }
+
+        private List<SObject> convertToStronglyTypedList(List<sObject> devObjs) {
+            Schema.SObjectType someType = devObjs.getSObjectType();
+
+            List<sobject> stronglyTypedDevObjs = null;
+            // Confirm all the sObjects in the List are of the same type.
+            for(sObject so : devObjs) {
+                Schema.SObjectType soType = so.getSObjectType();
+                if(someType == null) {
+                    someType = soType;
+                    String listType = 'List<' + soType + '>';
+                    stronglyTypedDevObjs = (List<SObject>)Type.forName(listType).newInstance();
+                } else {
+                    System.assertEquals(someType, soType, 'All sObjects must be of the same type');
+                }
+                stronglyTypedDevObjs.add(so);
+            }
+            return stronglyTypedDevObjs;
+        }
         
         /* Same as insertAsUser(SObject [], List&lt;String&gt;) but with Schema.SObjectField instead of string.
          */
-        public SFDCAccessControlResults.InsertResults insertAsUser(SObject [] devObjs, List<Schema.SObjectField> fieldsToSet) {
+        public virtual SFDCAccessControlResults.InsertResults insertAsUser(SObject [] devObjs, List<Schema.SObjectField> fieldsToSet) {
             if (devObjs == null || devObjs.size() == 0 || fieldsToSet == null || fieldsToSet.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
             
@@ -1212,7 +1764,7 @@ global class SFDCAccessController {
          * In addition throw an exception if the user does not have the UPDATE permission on the object.
          * Returns the cleanObj that was actually used to update the db.
          */
-        public SObject updateAsUser(SObject devObj, List<String> fieldsToUpdate) {
+        public virtual SObject updateAsUser(SObject devObj, List<String> fieldsToUpdate) {
             if (devObj == null || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
             
@@ -1267,7 +1819,7 @@ global class SFDCAccessController {
         
         /* Same as updateAsUser(SObject, List&lt;String&gt;) but with Schema.SObjectField instead of string.
          */
-        public SObject updateAsUser(SObject devObj, List<Schema.SObjectField> fieldsToUpdate) {
+        public virtual SObject updateAsUser(SObject devObj, List<Schema.SObjectField> fieldsToUpdate) {
             if (devObj == null || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
             
@@ -1325,9 +1877,14 @@ global class SFDCAccessController {
          *      ALL_OR_NONE - if any of the records can't be updated by the user, throw an exception and don't update any.
          * In addition throw an exception if the user does not have the UPDATE permission on the object. 
          */
-        public SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> devMap, List<String> fieldsToUpdate) {
-            if (devMap == null || devMap.size() == 0 || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
-                throw new AccessControlDmlException('null or empty parameter');
+        public virtual SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> devMap, List<String> fieldsToUpdate, Schema.SObjectType devType, List<String> fieldsToAlwaysUpdate) {
+            if (devMap == null || devMap.size() == 0) {
+                throw new AccessControlDmlException('null or empty parameter - devMap');
+            }
+
+            if (fieldsToUpdate == null || fieldsToUpdate.size() == 0) {
+                throw new AccessControlDmlException('null or empty parameter - fieldsToUpdate');
+            }
 
             // We must accepted a map argument from user instead of an array,
             // because, the user should be able to convert into map just using map.putAll(sobject_array). 
@@ -1335,7 +1892,9 @@ global class SFDCAccessController {
             // We also can't call put in a loop to add all objects, because we can't create a map with a generic
             // sobject value (in apex v16)                  
             
-            Schema.DescribeSObjectResult d = devMap.getSObjectType().getDescribe();
+            //Schema.DescribeSObjectResult d = devMap.getSObjectType().getDescribe();
+			Schema.DescribeSObjectResult d = devType.getDescribe();
+
             if (d.isUpdateable() == false) 
                 throw new SFDCAccessControlException('Access Violation', 
                                                         SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
@@ -1343,7 +1902,7 @@ global class SFDCAccessController {
                                                         d.getName(),
                                                         null);
                                                         
-            Map<String,Schema.SObjectField> fieldsMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(devMap.getSObjectType());
+            Map<String,Schema.SObjectField> fieldsMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(devType);
             
             // first load the existing objects as current user (enforcing sharing based on sharing mode)
             SObject [] cleanObjs = getObjects(devMap.values());
@@ -1370,15 +1929,26 @@ global class SFDCAccessController {
                 // set all fields that were requested and the user has permission to update - throw an exception if a field was requested and user can't update and in ALL_OR_NONE mode         
                 for (String fieldName : fieldsToUpdate) {
                     fieldName = fieldName.toLowerCase();
-                    if (updateableFields == null || updateableFields.contains(fieldName) == false) {
+                    if ((updateableFields == null || updateableFields.contains(fieldName) == false) && 
+					    (fieldsToAlwaysUpdate == null || fieldsToAlwaysUpdate.contains(fieldName) == false) ) {
                         // updateableFields is either null which means no fields are allowed to be set by user, or is not null but does not contain the current fieldName
-                        if (omode == OperationMode.ALL_OR_NONE)
+
+						Schema.SObjectField sof = fieldsMap.get(fieldName);
+						Schema.DescribeFieldResult dfr = null;
+						if(sof != null) {
+							dfr = sof.getDescribe();
+						}
+
+						System.debug(LoggingLevel.Warn, 'The field '+d.getName()+'.[' + fieldName + '] is not updateable. ' + dfr + ' fieldsToAlwaysUpdate:' +  fieldsToAlwaysUpdate );
+
+                        if (omode == OperationMode.ALL_OR_NONE) {
                             // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to update fieldName
                             throw new SFDCAccessControlException('Access Violation', 
                                                 SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
                                                 SFDCAccessControlException.ExceptionReason.NO_UPDATE,
                                                 d.getName(),
                                                 fieldName);
+						}
                     }
                     else {
                         // user has permission to update fieldName and it was request by the developer - so update it
@@ -1392,7 +1962,7 @@ global class SFDCAccessController {
                 // call dbUpdate() to enforce sharing rules if required
                 results = dbUpdate(cleanObjs);
             } catch (Exception e) {
-                throw new AccessControlDmlException('Failed to update objects');
+                throw new AccessControlDmlException('Failed to update objects' + e.getMessage());
             }
             
             return new SFDCAccessControlResults.UpdateResults(cleanObjs, results);
@@ -1400,7 +1970,7 @@ global class SFDCAccessController {
         
         /* Same as updateAsUser(Map&lt;ID, sObject&gt;, List&lt;String&gt;) but with Schema.SObjectField instead of string.
          */
-        public SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> devMap, List<Schema.SObjectField> fieldsToUpdate) {
+        public virtual SFDCAccessControlResults.UpdateResults updateAsUser(Map<ID, sObject> devMap, List<Schema.SObjectField> fieldsToUpdate, Schema.SObjectType devType) {
             if (devMap == null || devMap.size() == 0 || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
 
@@ -1470,7 +2040,7 @@ global class SFDCAccessController {
 
         /* Check to see if the user can delete this object. Throw exception if not. If he can, delete the object.
          */
-        public void deleteAsUser(SObject devObj) {
+        public virtual void deleteAsUser(SObject devObj) {
             if (devObj == null)
                 throw new AccessControlDmlException('null parameter');
             
@@ -1495,11 +2065,17 @@ global class SFDCAccessController {
          *      BEST_EFFORT - just delete the records that the user can delete.
          *      ALL_OR_NONE - if any of the records can't be deleted by the user, don't delete any.
          */
-        public SFDCAccessControlResults.DeleteResults deleteAsUser(SObject [] devObjs) {
+        public virtual SFDCAccessControlResults.DeleteResults deleteAsUser(SObject [] devObjs) {
             if (devObjs == null || devObjs.size() == 0)
                 throw new AccessControlDmlException('null parameter');
             
-            Schema.DescribeSObjectResult d = devObjs.getSObjectType().getDescribe();
+            Schema.SObjectType someType = devObjs.getSObjectType();
+            if(someType == null) {
+                devObjs = convertToStronglyTypedList(devObjs);
+                someType = devObjs.getSObjectType();
+            }
+
+            Schema.DescribeSObjectResult d = someType.getDescribe();
             if (d.isDeletable() == false) 
                 throw new SFDCAccessControlException('Access Violation', 
                                                         SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
@@ -1512,7 +2088,7 @@ global class SFDCAccessController {
                 // call dbDelete() to enforce sharing rules if required
                 results = dbDelete(devObjs);
             } catch (Exception e) {
-                throw new AccessControlDmlException('Failed to delete objects');
+                throw new AccessControlDmlException('Failed to delete objects', e);
             }
             
             return new SFDCAccessControlResults.DeleteResults(results);
@@ -1564,7 +2140,11 @@ global class SFDCAccessController {
          * to the SOQL as is, because they should only contain alphanumeric and under score
          */ 
         private SObject [] getObjects(sObject [] objArray) {
-            
+			//string methodName = 'SSFDCAccessController.getObjects() - ';
+
+            System.assertNotEquals(null, objArray);
+			//System.debug(methodName + 'objArray.getSObjectType(): ' + objArray.getSObjectType() + ' objArray: ' + objArray);
+			//System.debug(methodName + 'objArray.getSObjectType().getDescribe(): ' + objArray.getSObjectType().getDescribe());
             String Soql = 'SELECT Id FROM ' + objArray.getSObjectType().getDescribe().getName() + ' WHERE ';
             Boolean emptyIds = true;
             
