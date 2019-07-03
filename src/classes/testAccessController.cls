@@ -38,6 +38,10 @@
 @isTest
 private class testAccessController {
 
+	static {
+		AdBookSettings.createMock();
+	}
+
     static testMethod void testAccessControl() {
         Contact c = new Contact();
         c.LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name 
@@ -205,7 +209,7 @@ private class testAccessController {
         	
         	System.assert(results.size() == 2, 'Could not insert two objects into db #1');
         	System.assert(results[0].isSuccess() == true, 'Could not insert first object into db #1 [0] - ' + results[0].getErrors());
-        	System.assert(results[0].isSuccess() == true, 'Could not insert first object into db #1 [1] - ' + results[0].getErrors());
+        	System.assert(results[1].isSuccess() == true, 'Could not insert first object into db #1 [1] - ' + results[0].getErrors());
         	
         	arr = [select LastName,id from Contact where Id=:results[0].getId() or Id=:results[1].getId()];
 
@@ -325,11 +329,13 @@ private class testAccessController {
         }
     }
     
-    static testMethod void testAccessControlConstructor() {
+	@IsTest
+    static void testAccessControlConstructor() {
         String errStr;
         
         try {
 	        SFDCAccessController ac = new SFDCAccessController(SFDCAccessController.SharingMode.WITHOUT, SFDCAccessController.OperationMode.ALL_OR_NONE, SFDCAccessController.OperationMode.ALL_OR_NONE);
+			System.assertNotEquals(null, ac);
         } catch (SFDCAccessControlException e) {
         	errStr = 'Access control violation - Type: ' + e.getExceptionType() + ' Reason: '  
         		+ e.getExceptionReason() + ' Object: ' + e.getExceptionObject() + ' Field: '  
@@ -339,7 +345,7 @@ private class testAccessController {
     
     static testMethod void testLimits() {
     	/* This test is to confirm the new functions we added (insertAsUser and updateAsUser) 
-    	   that use Schema.SObjectField indded solve the fields limiters issue. (fields has a limit of 10 calls)
+    	   that use Schema.SObjectField indeed solve the fields limiters issue. (fields has a limit of 10 calls)
     	   Now that we removed this limit, we should be able to call these functions until we hit the next type of
     	   limiter, this is likely to be DML operations which are capped at 100. This is why we are testing up to 100 */
     	   
@@ -355,4 +361,431 @@ private class testAccessController {
     	
     	System.assert(arr.size() == max, 'testLimits');
     }
+
+	@IsTest
+	static void testPopulatedFields() {
+        Contact c = new Contact();
+		c.FirstName = 'John';
+        c.LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra4'; // We add this long random to make sure we will not conflict with any real last name 
+        String errStr;
+        
+       
+        ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+        ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+           	
+        c = (Contact)ESAPI.accessController().insertAsUser(c);
+        	
+        c.LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra4 updated';
+        ESAPI.accessController().updateAsUser(c);
+        ESAPI.accessController().deleteAsUser(c);
+        	
+        c = new Contact();
+        c.LastName = 'ESAPI Test2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra4';
+        	
+        ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
+        ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITHOUT);
+        c = (Contact)ESAPI.accessController().insertAsUser(c);
+        	
+        c.LastName = 'ESAPI Test2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra4 updated';
+        ESAPI.accessController().updateAsUser(c);
+        ESAPI.accessController().deleteAsUser(c);
+        	
+        c = new Contact();
+        c.LastName = 'ESAPI Test3 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra4'; 
+        	
+        ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
+        ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.INHERIT);
+        c = (Contact)ESAPI.accessController().insertAsUser(c);
+        	
+        c.LastName = 'ESAPI Test3 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra4 updated';
+        ESAPI.accessController().updateAsUser(c);
+        ESAPI.accessController().deleteAsUser(c);
+        	
+        
+        
+        
+    }
+
+	@IsTest
+	public static void isAuthorizedToView() {
+
+		Schema.SObjectType objType = Account.getSObjectType();
+
+		Map<String, Schema.SObjectField> fMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(objType);
+
+		List<Schema.SObjectField> fields = fMap.values();
+
+		boolean hasAccess = ESAPI.accessController().isAuthorizedToView(objType, fields);
+		System.assert(hasAccess);
+
+		List<string> fieldNames = new List<String>(fMap.keySet());
+		hasAccess = ESAPI.accessController().isAuthorizedToView(objType, fieldNames);
+		System.assert(hasAccess);
+	}
+
+	@IsTest
+	public static void isAuthorizedToUpdate() {
+
+		Schema.SObjectType objType = Account.getSObjectType();
+
+		Map<String, Schema.SObjectField> fMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(objType);
+
+		List<Schema.SObjectField> fields = fMap.values();
+
+		boolean hasAccess = ESAPI.accessController().isAuthorizedToUpdate(objType, fields);
+		System.debug(hasAccess);
+
+		List<string> fieldNames = new List<String>(fMap.keySet());
+		hasAccess = ESAPI.accessController().isAuthorizedToUpdate(objType, fieldNames);
+		System.debug(hasAccess);
+		System.assert(!hasAccess);
+	}
+
+	@IsTest
+	public static void isAuthorizedToCreate() {
+
+		Schema.SObjectType objType = Account.getSObjectType();
+
+		Map<String, Schema.SObjectField> fMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(objType);
+
+		List<Schema.SObjectField> fields = fMap.values();
+
+		boolean hasAccess = ESAPI.accessController().isAuthorizedToCreate(objType, fields);
+		System.debug(hasAccess);
+
+		List<string> fieldNames = new List<String>(fMap.keySet());
+		hasAccess = ESAPI.accessController().isAuthorizedToCreate(objType, fieldNames);
+		System.debug(hasAccess);
+		System.assert(!hasAccess);
+	}
+
+	@IsTest
+	static void bypass() {
+
+		AdBookSettings.BypassSecurityModelChecks = true;
+
+        String errStr;
+        
+        try {
+        	// test with sharing
+	        Contact c1 = new Contact();
+	        c1.LastName = 'ESAPI TestArray1 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        Contact c2 = new Contact();
+	        c2.LastName = 'ESAPI TestArray2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        Contact [] arr = new Contact[]{c1, c2};
+	        Database.SaveResult [] results;
+	        
+        	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+        	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+        	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+
+			boolean hasAccess = ESAPI.accessController().isAuthorizedToCreate(Contact.getSObjectType(), new List<String>{'LastName'});
+			System.debug(hasAccess);
+        	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'}).getResults();
+
+
+			c1 = new Contact();
+	        c1.LastName = 'ESAPI TestArray1b Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        c2 = new Contact();
+	        c2.LastName = 'ESAPI TestArray2b Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+			arr = new Contact[]{c1, c2};
+        	results = ESAPI.accessController().insertAsUser(arr, new List<Schema.SObjectField>{Contact.LastName}).getResults();
+        	
+        	System.assert(results.size() == 2, 'Could not insert two objects into db #1');
+        	System.assert(results[0].isSuccess() == true, 'Could not insert first object into db #1 [0] - ' + results[0].getErrors());
+        	System.assert(results[1].isSuccess() == true, 'Could not insert first object into db #1 [1] - ' + results[0].getErrors());
+        	
+        	arr = [select LastName,id from Contact where Id=:results[0].getId() or Id=:results[1].getId()];
+
+			System.assert(arr.size() == 2, 'Could not get two objects from db #1');
+			
+			arr[0].LastName = 'ESAPI TestArray1 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+			arr[1].LastName = 'ESAPI TestArray2 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+        	
+			hasAccess = ESAPI.accessController().isAuthorizedToUpdate(Contact.getSObjectType(), new List<String>{'LastName'});
+			System.debug(hasAccess);
+
+        	ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+        	ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<Schema.SObjectField>{Contact.LastName});
+        	ESAPI.accessController().deleteAsUser(arr);
+        	
+        	// test without sharing
+	        c1 = new Contact();
+	        c1.LastName = 'ESAPI TestArray3 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        c2 = new Contact();
+	        c2.LastName = 'ESAPI TestArray4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        arr = new Contact[]{c1, c2};
+        	
+        	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
+        	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
+        	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITHOUT);
+        	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'}).getResults();
+        	
+        	arr = [select LastName,id from Contact where Id=:results[0].getId() or Id=:results[1].getId()];
+
+			System.assert(arr.size() == 2, 'Could not get two objects from db #2');
+			
+			arr[0].LastName = 'ESAPI TestArray3 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+			arr[1].LastName = 'ESAPI TestArray4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+        	
+        	ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+        	ESAPI.accessController().deleteAsUser(arr);
+
+        	// test inherit sharing
+	        c1 = new Contact();
+	        c1.LastName = 'ESAPI TestArray5 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        c2 = new Contact();
+	        c2.LastName = 'ESAPI TestArray6 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        arr = new Contact[]{c1, c2};
+        	
+        	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
+        	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
+        	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.INHERIT);
+        	results = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'}).getResults();
+        	
+        	arr = [select LastName,id from Contact where Id=:results[0].getId() or Id=:results[1].getId()];
+
+			System.assert(arr.size() == 2, 'Could not get two objects from db #3');
+			
+			arr[0].LastName = 'ESAPI TestArray5 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+			arr[1].LastName = 'ESAPI TestArray6 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+        	
+        	ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+        	ESAPI.accessController().deleteAsUser(arr);
+        	
+        	// test results class
+	        c1 = new Contact();
+	        c1.LastName = 'ESAPI TestArray5 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        c2 = new Contact();
+	        c2.LastName = 'ESAPI TestArray6 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        arr = new Contact[]{c1, c2};
+        	
+        	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+        	ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+        	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+        	
+        	SFDCAccessControlResults.InsertResults insertResults;
+        	sObject [] insertedObjects;
+        	
+        	insertResults = ESAPI.accessController().insertAsUser(arr, new List<String>{'LastName'});
+        	
+        	System.assert(insertResults.wasSuccessful() == true, 'insertResults.wasSuccessful() == true');
+        	
+        	results = insertResults.getResults();
+        	System.assert(results.size() == 2, 'results.size() == 2');
+        	
+        	insertedObjects = insertResults.getInsertedObjects();
+        	System.assert(insertedObjects.size() == 2, 'insertedObjects.size() == 2');
+        	System.assert(insertedObjects[0].Id == results[0].getId(), 'insertedObjects[0].Id == results[0].getId()');
+        	System.assert(insertedObjects[1].Id == results[1].getId(), 'insertedObjects[1].Id == results[1].getId()');
+        	
+        	arr = [select LastName,id from Contact where Id=:results[0].getId() or Id=:results[1].getId()];
+
+			System.assert(arr.size() == 2, 'Could not get two objects from db #3');
+			
+			arr[0].LastName = 'ESAPI TestArray5 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+			arr[1].LastName = 'ESAPI TestArray6 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3 updated';
+
+        	SFDCAccessControlResults.UpdateResults updateResults;
+        	sObject [] updatedObjects;
+        	
+        	updateResults = ESAPI.accessController().updateAsUser(new Map<ID, Contact>(arr), new List<String>{'LastName'});
+
+        	System.assert(updateResults.wasSuccessful() == true, 'updateResults.wasSuccessful() == true');
+        	
+        	results = updateResults.getResults();
+        	System.assert(results.size() == 2, 'results.size() == 2');
+        	
+        	updatedObjects = updateResults.getUpdatedObjects();
+        	System.assert(updatedObjects.size() == 2, 'updatedObjects.size() == 2');
+        	System.assert(updatedObjects[0].Id == results[0].getId(), 'updatedObjects[0].Id == results[0].getId()');
+        	System.assert(updatedObjects[1].Id == results[1].getId(), 'updatedObjects[1].Id == results[1].getId()');
+        	
+        	SFDCAccessControlResults.DeleteResults deleteResults;
+        	deleteResults = ESAPI.accessController().deleteAsUser(arr);
+        	
+        	System.assert(deleteResults.wasSuccessful() == true, 'deleteResults.wasSuccessful() == true');
+        	
+        	Database.DeleteResult [] delResults = deleteResults.getResults();
+        	System.assert(delResults.size() == 2, 'delResults.size() == 2');
+        	
+        } catch (SFDCAccessControlException e) {
+        	errStr = 'Access control violation - Type: ' + e.getExceptionType() + ' Reason: '  
+        		+ e.getExceptionReason() + ' Object: ' + e.getExceptionObject() + ' Field: '  
+        		+ e.getExceptionField() + ' Text: ' + e.getText(); 
+        }
+    }
+
+	@IsTest
+	static void bypassSingle() {
+
+		AdBookSettings.BypassSecurityModelChecks = true;
+
+
+        // test with sharing
+	    Contact c1 = new Contact();
+	    c1.LastName = 'ESAPI TestArray1 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+	        
+	    Database.SaveResult [] results;
+	        
+        ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+        ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+        ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+
+        c1 = (Contact)ESAPI.accessController().insertAsUser(c1, new List<String>{'LastName'});
+
+		c1 = new Contact();
+	    c1.LastName = 'ESAPI TestArray1b Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+        c1 = (Contact)ESAPI.accessController().insertAsUser(c1, new List<Schema.SObjectField>{Contact.LastName});
+        
+		boolean hasAccess = ESAPI.accessController().isAuthorizedToUpdate(Contact.getSObjectType(), new List<Schema.SObjectField>{Contact.LastName});
+		System.assert(hasAccess);
+			
+        ESAPI.accessController().updateAsUser(c1, new List<String>{'LastName'});
+        ESAPI.accessController().updateAsUser(c1, new List<Schema.SObjectField>{Contact.LastName});
+        ESAPI.accessController().deleteAsUser(c1);
+        	
+        // test without sharing
+	    c1 = new Contact();
+	    c1.LastName = 'ESAPI TestArray3 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name
+        	
+        ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
+        ESAPI.accessController().setArrayOperationMode(SFDCAccessController.OperationMode.BEST_EFFORT);
+        ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITHOUT);
+        c1 = (Contact)ESAPI.accessController().insertAsUser(c1, new List<String>{'LastName'});
+        	        	
+        ESAPI.accessController().updateAsUser(c1, new List<String>{'LastName'});
+        ESAPI.accessController().deleteAsUser(c1);
+ 
+    }
+
+	@IsTest
+	static void isAuthorizedToUpsertWithBypassSameFields() {
+		AdBookSettings.BypassSecurityModelChecks = true;
+		System.assert(ESAPI.accessController().isAuthorizedToUpsert(Contact.getSObjectType(), new List<String>{'FooBar'} ));
+	}
+
+	@IsTest
+	static void isAuthorizedToUpsertWithBypassDifferentFields() {
+		AdBookSettings.BypassSecurityModelChecks = true;
+		System.assert(ESAPI.accessController().isAuthorizedToUpsert(Contact.getSObjectType(), new List<String>{'Foo'} , new List<String>{'Bar'} ));
+	}
+
+	@IsTest
+	static void insertAsUserMultipleTypesWithBypass() {
+		AdBookSettings.BypassSecurityModelChecks = true;
+		List<sObject> toInsert = new List<sObject>();
+		// Mixed sObject types
+		Account a = new Account();
+		a.Name = 'Test';
+		toInsert.add(a);
+
+		Contact c1 = new Contact();
+	    c1.LastName = 'ESAPI TestArray1c Spu8UY&thuCrUzAPa2ASTaC7rA$Ra4';
+		toInsert.add(c1);
+
+		SFDCAccessControlResults.InsertResults results = ESAPI.accessController().insertAsUser(toInsert);
+		System.assert(results.wasSuccessful());
+	}
+
+	@IsTest
+	static void updateAsUserMultipleTypesWithBypass() {
+		AdBookSettings.BypassSecurityModelChecks = true;
+		List<sObject> toUpdate = new List<sObject>();
+		// Mixed sObject types
+		Account a = new Account();
+		a.Name = 'Test';
+		toUpdate.add(a);
+
+		Contact c1 = new Contact();
+	    c1.LastName = 'ESAPI TestArray1c Spu8UY&thuCrUzAPa2ASTaC7rA$Ra4';
+		toUpdate.add(c1);
+
+		insert toUpdate;
+		a.Name += '2';
+		c1.LastName += '2';
+
+		SFDCAccessControlResults.UpdateResults results = ESAPI.accessController().updateAsUser(toUpdate);
+		System.assert(results.wasSuccessful());
+	}
+
+	@isTest
+	static void restrictedUser() {
+		AdBookSettings.BypassSecurityModelChecks = false;
+
+		User u = Test_AdBookTestData.testDataSetupUser('Restricted Standard User');
+
+		System.runAs(u) {
+			// The following code runs as user 'u' 
+			System.debug('Current User: ' + UserInfo.getUserName());
+			System.debug('Current Profile: ' + UserInfo.getProfileId()); 
+
+			// No access
+			List<String> fields = new List<String>{'Phone'};
+			System.assert(!ESAPI.accessController().isAuthorizedToCreate(Contact.getSObjectType(), fields), 'Profile should have no access to create Contact fields ' + fields);
+			System.assert(!ESAPI.accessController().isAuthorizedToUpdate(Contact.getSObjectType(), fields), 'Profile should have no access to update Contact fields ' + fields);
+			System.assert(!ESAPI.accessController().isAuthorizedToUpsert(Contact.getSObjectType(), fields), 'Profile should have no access to upsert Contact fields ' + fields);
+
+			// Read Only
+			fields = new List<String>{'ABContactID__c'};
+			System.assert(!ESAPI.accessController().isAuthorizedToCreate(Contact.getSObjectType(), fields), 'Profile should have no write access to create Contact fields. ' + fields);
+
+			// Expected to have access to LastName
+			fields = new List<String>{'LastName'};
+			System.assert(ESAPI.accessController().isAuthorizedToCreate(Contact.getSObjectType(), fields), 'Profile should have access to create Contact fields. ' + fields);
+
+			Contact c1 = new Contact();
+			c1.ABContactID__c = '12345';
+			c1.LastName = 'FooBar';
+			try {
+				ESAPI.accessController().insertAsUser(c1);
+				System.assert(false, 'Should never get here. Should not have access to AB2__ABContactID__c');
+			}
+			catch (Exception ex) {
+				// Expected Excption
+				System.debug(ex + '');
+				//System.assertEquals(SFDCAccessControlException.ExceptionReason.NO_CREATE, ex.getExceptionReason());
+				//System.assertEquals(SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, ex.getExceptionType());
+				
+				 //+ ' Object: ' + e.getExceptionObject() + ' Field: '  
+        		//+ e.getExceptionField() + ' Text: ' + e.getText(); 
+			} //catch (Exception ex) {
+				//System.debug(ex);
+				//System.assert(false, 'Unexpected exception: ' + ex);
+			//}
+		}
+
+		// Don't make this Settings change as the test user
+		AdBookSettings.BypassSecurityModelChecks = true;
+
+		System.runAs(u) {
+			System.assert(ESAPI.accessController().isAuthorizedToUpsert(Contact.getSObjectType(), new List<String>{'Phone'} ), 'Custom setting should allow access');
+		}
+	}
+
+	@IsTest
+	public static void upsertMixedSObjectTypes() {
+		List<sObject> toUpsert = new List<sObject>();
+
+		Account a = new Account();
+		a.Name = 'Test';
+		toUpsert.add(a);
+		Lead l = new Lead();
+		l.LastName = 'Bob';
+		l.Company = 'ACME Inc.';
+		toUpsert.add(l);
+
+		List<string> fieldsExcluded = new List<string>();
+		SFDCAccessControlResults.UpsertResults results = ESAPI.accessController().upsertAsUser(toUpsert, fieldsExcluded);
+		System.assert(results.wasSuccessful());
+
+		SObject[] upserted = results.getUpsertedObjects();
+		System.assertEquals(toUpsert.size(), upserted.size());
+		for(sObject so : upserted) {
+			System.assertNotEquals(null, so.Id, 'Expected to have ID set');
+		}
+
+
+	}
+
 }
