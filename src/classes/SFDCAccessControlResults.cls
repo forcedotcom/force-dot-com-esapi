@@ -22,6 +22,7 @@
 global with sharing virtual class SFDCAccessControlResults {
 	
 	private Database.SaveResult [] saveResultsArr; // this object will hold the results for upadte and insert operations
+	private Database.UpsertResult [] upsertResultsArr; // this object will hold the results for upadte and insert operations
 	private Database.DeleteResult [] deleteResultsArr; // this object will hold the results for delete operations
 	private SObject [] cleanObjectsArr; // this object will hold the actual objects used to insert/update into db
 	
@@ -119,6 +120,47 @@ global with sharing virtual class SFDCAccessControlResults {
 	}
 
 	/**
+	 * This class provides results info and functionality for update operations.
+	 */
+	public with sharing class UpsertResults extends SFDCAccessControlResults {
+
+		/**
+		 * This constructor sets the objects that were actually used to update the db, and also sets the results from that update operation.
+		 */
+		public UpsertResults(SObject[] objects, Database.UpsertResult[] results) {
+			super();
+			setCleanObjectsArr(objects);
+			setUpsertResultsArr(results);
+		}
+
+		/**
+		 * Get the Database.SaveResult [] returned by the update operation.
+		 */
+		public Database.UpsertResult [] getResults() {
+			return upsertResultsArr;
+		}
+
+		/**
+		 * Get the objects that were actually updated into the db.<br>
+		 * Note that these objects might not be the same as the objects you provided to the updateAsUser function.<br>
+		 * Depending on the current user permissions, the operation mode, and the fields you requested to set, this might<br>
+		 * not be all the fields you have in your original objects. 
+		 */
+		public SObject [] getUpsertedObjects() {
+			return cleanObjectsArr;
+		}
+
+		/**
+		 * Did the update operation succeed for all objects in the array?<br>
+		 * Note that if array operation mode was set to BEST_EFFORT, we will not get an exception even if some<br>
+		 * of the objects fail to update.
+		 */
+		public Boolean wasSuccessful() {
+			return wasUpsertSuccessful();
+		}
+	}
+
+	/**
 	 * This class provides results info and functionality for delete operations.
 	 */
 	global with sharing class DeleteResults extends SFDCAccessControlResults {
@@ -162,6 +204,12 @@ global with sharing virtual class SFDCAccessControlResults {
 		saveResultsArr = results;
 	}
 
+	private void setUpsertResultsArr(Database.UpsertResult [] results) {
+		if (results == null)
+			throw new AccessControlResultsException('results must not be set to null');
+		upsertResultsArr = results;
+	}
+
 	private void setDeleteResultsArr(Database.DeleteResult [] results) {
 		if (results == null)
 			throw new AccessControlResultsException('results must not be set to null');
@@ -174,6 +222,17 @@ global with sharing virtual class SFDCAccessControlResults {
 		Integer i;
 		for (i = 0; i < saveResultsArr.size(); i++) {
 			if (saveResultsArr[i].isSuccess() == false)
+				return false;
+		} 
+		return true;
+	}
+
+	private Boolean wasUpsertSuccessful() {
+		if (upsertResultsArr == null)
+			throw new AccessControlResultsException('upsertResultsArr must not be null');
+		Integer i;
+		for (i = 0; i < upsertResultsArr.size(); i++) {
+			if (upsertResultsArr[i].isSuccess() == false)
 				return false;
 		} 
 		return true;
