@@ -89,6 +89,7 @@ global with sharing class SFDCAccessControlException extends Exception {
 	 * @param eField The field name this error was triggered on
 	 */
 	global SFDCAccessControlException(String eText, ExceptionType eType, ExceptionReason eReason, String eObject, String eField) {
+		this(eText + ' ' + eType + ' ' + eReason + ' ' + eObject + ' ' + eField);
 		this.eText = eText;
 		this.eType = eType;
 		this.eReason = eReason;
