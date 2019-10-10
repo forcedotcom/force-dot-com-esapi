@@ -114,17 +114,560 @@ private class testAccessController {
         	
         	ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
-        	ESAPI.accessController().insertAsUser(c, new List<String>{'LastName123DOESNOTEXIST'});
+			string fieldNameThatDoesNotExist = 'LastName123DOESNOTEXIST';
+        	ESAPI.accessController().insertAsUser(c, new List<String>{fieldNameThatDoesNotExist}); // The requested field doesn't exist.
         	
-        	System.assert(false, 'Should never get here');
+        	System.assert(false, 'Should never get here. Not expecting access to field LastName123DOESNOTEXIST');
         } catch (SFDCAccessControlException e) {
         	// should fail - so all good
         	errStr = 'Access control violation - Type: ' + e.getExceptionType() + ' Reason: '  
         		+ e.getExceptionReason() + ' Object: ' + e.getExceptionObject() + ' Field: '  
         		+ e.getExceptionField() + ' Text: ' + e.getText(); 
+
+			System.assertEquals('NO_CREATE', e.getExceptionReason() + '');
+			System.assertEquals('Access Violation', e.getText());
+			System.assertEquals('FIELD_ACCESS_VIOLATION', e.getExceptionType() + '');
         }
     }
+
+	// No access to sObject at all
+	@isTest
+	static void runasProfileNoCreatesObject() {
+		runasProfileNoCreatesObject_Internal(false);
+	}
+
+	@isTest
+	static void runasProfileNoCreatesObjects() {
+		runasProfileNoCreatesObject_Internal(true);
+	}
+
+	static void runasProfileNoCreatesObject_Internal(boolean asCollection) {
+
+		User u = testReadOnlyUser(false);
+
+		System.runAs(u) {
+			try {
+				Contact c = new Contact();
+				c.LastName = 'ESAPI Test4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3';
+				
+				ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+				ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+
+				if(asCollection) {
+					ESAPI.accessController().insertAsUser(new List<Contact>{c}, new List<String>{'LastName'});
+				} else {
+					ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
+				}
+
+				System.assert(false, 'Should never get here. Not expected to have create access for Contact');
+			}  catch (SFDCAccessControlException e) {
+				// should fail - so all good
+				string errStr = 'Access control violation - Type: ' + e.getExceptionType() + ' Reason: '  
+					+ e.getExceptionReason() + ' Object: ' + e.getExceptionObject() + ' Field: '  
+					+ e.getExceptionField() + ' Text: ' + e.getText(); 
+
+				System.assertEquals('NO_CREATE', e.getExceptionReason() + '');
+				System.assertEquals('Access Violation', e.getText());
+				System.assertEquals('OBJECT_ACCESS_VIOLATION', e.getExceptionType() + '');
+			}
+		}
+	}
+
+	// No update access on the sObject
+	@isTest
+	static void runasProfileNoUpdatesObject() {
+		runasProfileNoUpdatesObject_Internal(false);
+	}
+
+	@isTest
+	static void runasProfileNoUpdatesObjects() {
+		runasProfileNoUpdatesObject_Internal(true);
+	}
+
+	static void runasProfileNoUpdatesObject_Internal(boolean asCollection) {
+		User u = testReadOnlyUser(false);
+
+		System.runAs(u) {
+			try {
+				Contact c = new Contact();
+				c.LastName = 'ESAPI Test4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3';
+				insert c;
+				
+				ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+				ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+
+				if(asCollection) {
+					ESAPI.accessController().updateAsUser(c, new List<String>{'LastName'});
+				} else {
+					ESAPI.accessController().updateAsUser(new Map<Id, Contact>{c.Id => c}, new List<String>{'LastName'});
+				}
+
+				System.assert(false, 'Should never get here. Not expected to have update access for Contact');
+			}  catch (SFDCAccessControlException e) {
+				// should fail - so all good
+				string errStr = 'Access control violation - Type: ' + e.getExceptionType() + ' Reason: '  
+					+ e.getExceptionReason() + ' Object: ' + e.getExceptionObject() + ' Field: '  
+					+ e.getExceptionField() + ' Text: ' + e.getText(); 
+
+				System.assertEquals('NO_UPDATE', e.getExceptionReason() + '');
+				System.assertEquals('Access Violation', e.getText());
+				System.assertEquals('OBJECT_ACCESS_VIOLATION', e.getExceptionType() + '');
+			}
+		}
+	}
+
+	// No access to field on sObject create
+	@isTest
+	static void runasProfileNoCreatesObjectField_WithoutStripping() {
+		runasProfileNoCreatesObjectField_Internal(false);
+	}
+
+	@isTest
+	static void runasProfileNoCreatesObjectsField_WithoutStripping() {
+		runasProfileNoCreatesObjectField_Internal(true);
+	}
+
+	// No access to field on sObject create
+	static void runasProfileNoCreatesObjectField_Internal(boolean asCollection) {
+
+		User u = testReadOnlyUser(true);
+
+		PermissionSet ps = new PermissionSet(Label = 'mockPs', Name = 'mockPs');
+		insert ps;
+
+		// https://gist.github.com/soapboxjoe/8333202
+		ObjectPermissions contactObjectPermission = new ObjectPermissions(SobjectType = 'Contact',
+																	ParentId = ps.Id,
+																	PermissionsCreate = true,
+																	PermissionsDelete = false,
+																	PermissionsEdit = true,
+																	PermissionsRead = true
+																);
+		insert contactObjectPermission;
+
+		FieldPermissions doNoCallFieldPermission = new FieldPermissions(SobjectType ='Contact',
+																Field = 'Contact.DoNotCall',
+																ParentId = ps.Id,
+																PermissionsRead = true,
+																PermissionsEdit = false
+															);	
+		FieldPermissions contactFieldPermission = new FieldPermissions(SobjectType ='Contact',
+																Field = 'Contact.Description',
+																ParentId = ps.Id,
+																PermissionsRead = true,
+																PermissionsEdit = true
+															);
+		insert new FieldPermissions[]{doNoCallFieldPermission, contactFieldPermission};
+
+		PermissionSetAssignment psa = new PermissionSetAssignment(PermissionSetId = ps.Id, AssigneeId = u.Id);
+		insert psa; 
+
+		System.runAs(u) {
+			try {
+				Contact c = new Contact();
+				c.LastName = 'ESAPI Test4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3';
+				c.DoNotCall = true;
+				c.Description = 'Desc';
+
+				System.assert(SObjectType.Contact.createable);
+				System.assert(SObjectType.Contact.fields.DoNotCall.isAccessible(), 'The Contact.DoNotCall field should be Accessible.');
+				System.assert(!SObjectType.Contact.fields.DoNotCall.isCreateable(), 'The Contact.DoNotCall field should not be Createable. Just Readable');
+				System.assert(SObjectType.Contact.fields.Description.isCreateable());
+				
+				ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+				ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+
+				if(asCollection) {
+					ESAPI.accessController().insertAsUser(new List<Contact>{c}, new List<String>{'LastName', 'Description', 'DoNotCall'});
+				} else {
+					ESAPI.accessController().insertAsUser(c, new List<String>{'LastName', 'Description', 'DoNotCall'});
+				}
+
+				System.assert(false, 'Should never get here. Not expected to have permission to insert the Contact.DoNotCall field');
+			}  catch (SFDCAccessControlException e) {
+				// should fail - so all good
+				string errStr = 'Access control violation - Type: ' + e.getExceptionType() + ' Reason: '  
+					+ e.getExceptionReason() + ' Object: ' + e.getExceptionObject() + ' Field: '  
+					+ e.getExceptionField() + ' Text: ' + e.getText(); 
+
+				System.assertEquals('NO_CREATE', e.getExceptionReason() + '');
+				System.assertEquals('Access Violation', e.getText());
+				System.assertEquals('FIELD_ACCESS_VIOLATION', e.getExceptionType() + '');
+				System.assertEquals('Contact', e.getExceptionObject() + '');
+				System.assertEquals('donotcall', e.getExceptionField() + '');
+			}
+		}
+	}
+
+	//#region Update
+	// No access to field on sObject update
+
+	@isTest
+	static void runasProfileNoUpdatesObjectField_WithStripping() {
+		runasProfileNoUpdatesObjectField_Internal(false);
+	}
+
+	@isTest
+	static void runasProfileNoUpdatesObjectsField_WithStripping() {
+		runasProfileNoUpdatesObjectField_Internal(true);
+	}
+
+	static void runasProfileNoUpdatesObjectField_Internal(boolean asCollection) {
+		User u = testReadOnlyUser(true);
+
+		PermissionSet ps = new PermissionSet(Label = 'mockPs', Name = 'mockPs');
+		insert ps;
+
+		// https://gist.github.com/soapboxjoe/8333202
+		ObjectPermissions contactObjectPermission = new ObjectPermissions(SobjectType = 'Contact',
+																	ParentId = ps.Id,
+																	PermissionsCreate = true,
+																	PermissionsDelete = false,
+																	PermissionsEdit = true,
+																	PermissionsRead = true
+																);
+		insert contactObjectPermission;
+
+		FieldPermissions doNotCallFieldPermission = new FieldPermissions(SobjectType ='Contact',
+																Field = 'Contact.DoNotCall',
+																ParentId = ps.Id,
+																PermissionsRead = true,
+																PermissionsEdit = false
+															);	
+		// 'AccountId', 'LastName','FirstName','Salutation','Name', 'ReportsToId', 'OwnerId', 'LastActivityDate','LastCURequestDate','LastCUUpdateDate','LastViewedDate','LastReferencedDate', 'EmailBouncedReason','EmailBouncedDate','IsEmailBounced', 'PhotoUrl', 'JigsawContactId'
+		List<string> readWriteFields = new List<String>{'Account','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','Title','Department','AssistantName','LeadSource','Birthdate','Description','Jigsaw','CleanStatus'};
+		// OtherAddress - 'OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','OtherGeocodeAccuracy',
+		readWriteFields.add('OtherAddress');
+		// MailingAddress - 'MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','MailingGeocodeAccuracy'
+		readWriteFields.add('MailingAddress');
+		
+		List<FieldPermissions> readWritePerms = createFieldPermissions('Contact', ps.Id, true, true, readWriteFields);
+		
+		readWritePerms.add(doNotCallFieldPermission);
+
+		insert readWritePerms;
+
+		PermissionSetAssignment psa = new PermissionSetAssignment(PermissionSetId = ps.Id, AssigneeId = u.Id);
+		insert psa; 
+
+		System.runAs(u) {
+			try {
+				Contact c = new Contact();
+				c.LastName = 'ESAPI Test4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3';
+				c.DoNotCall = true;
+				c.Description = 'Desc';
+				insert c;
+
+				System.assert(SObjectType.Contact.createable);
+				System.assert(!SObjectType.Contact.fields.DoNotCall.isCreateable(), 'The Contact.DoNotCall field should not be Createable. Just Readable');
+				System.assert(!SObjectType.Contact.fields.DoNotCall.isUpdateable()); 
+				System.assert(SObjectType.Contact.fields.Description.isCreateable());
+				System.assert(SObjectType.Contact.fields.Description.isUpdateable());
+				System.assert(SObjectType.Contact.fields.OtherStreet.isCreateable());
+				System.assert(SObjectType.Contact.fields.MailingGeocodeAccuracy.isUpdateable()); 
+				
+				ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+				ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+				// AccountId, 'Name', 'OtherGeocodeAccuracy', 'MailingAddress', 'MailingGeocodeAccuracy','ReportsToId'
+
+				if(asCollection) {
+					ESAPI.accessController().updateAsUser(new Map<Id, Contact>{c.Id => c}, new List<String>{'LastName','FirstName','Salutation','OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','Title','Department','AssistantName','LeadSource','Birthdate','Description','OwnerId','EmailBouncedReason','EmailBouncedDate','Jigsaw','CleanStatus', 'Email', 'DoNotCall'});
+				} else {
+					ESAPI.accessController().updateAsUser(c, new List<String>{'LastName','FirstName','Salutation','OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','Title','Department','AssistantName','LeadSource','Birthdate','Description','OwnerId','EmailBouncedReason','EmailBouncedDate','Jigsaw','CleanStatus', 'Email', 'DoNotCall'});
+				}
+
+				System.assert(false, 'Should never get here. Not expected to have permission to update the Contact.DoNotCall field');
+			}  catch (SFDCAccessControlException e) {
+				// should fail - so all good
+				string errStr = 'Access control violation - Type: ' + e.getExceptionType() + ' Reason: '  
+					+ e.getExceptionReason() + ' Object: ' + e.getExceptionObject() + ' Field: '  
+					+ e.getExceptionField() + ' Text: ' + e.getText(); 
+
+				System.assertEquals('NO_UPDATE', e.getExceptionReason() + '');
+				System.assertEquals('Access Violation', e.getText());
+				System.assertEquals('FIELD_ACCESS_VIOLATION', e.getExceptionType() + '');
+				System.assertEquals('Contact', e.getExceptionObject() + '');
+				System.assertEquals('donotcall', e.getExceptionField() + '', 'Expected to have no access to the Contact.DoNotCall field');
+ 
+			}
+		}
+	}
+	//#endregion
+
+	private static List<FieldPermissions> createFieldPermissions(string sObjectType, Id permissionSetId, boolean read, boolean edit, List<string> readWriteFields) {
+		List<FieldPermissions> fieldPerms = new List<FieldPermissions>();
+		for(string fieldName : readWriteFields) {
+			FieldPermissions contactFieldPermission = new FieldPermissions(SobjectType = sObjectType,
+																Field = sObjectType + '.' + fieldName,
+																ParentId = permissionSetId,
+																PermissionsRead = read,
+																PermissionsEdit = edit
+															);
+			fieldPerms.add(contactFieldPermission);
+		}
+		return fieldPerms;
+	}
+
+	//#region isAuthorizedToView
+	@IsTest
+	static void runasProfileNotAuthorizedToViewSObject() {
+		User u = testReadOnlyUser(true);
+
+		PermissionSet ps = new PermissionSet(Label = 'mockPs', Name = 'mockPs');
+		insert ps;
+
+		// https://gist.github.com/soapboxjoe/8333202
+		// ObjectPermissions imageObjectPermission = new ObjectPermissions(SobjectType = 'Image',
+		// 															ParentId = ps.Id,
+		// 															PermissionsCreate = false,
+		// 															PermissionsDelete = false,
+		// 															PermissionsEdit = false,
+		// 															PermissionsRead = false
+		// 														);
+		// insert imageObjectPermission;
+
+		PermissionSetAssignment psa = new PermissionSetAssignment(PermissionSetId = ps.Id, AssigneeId = u.Id);
+		insert psa; 
+
+		System.runAs(u) {
+			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+			ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+			
+			Schema.SObjectType imageSObjectType = ((Id)'4YL000000000000').getsobjecttype(); //Schema.Image.getSobjectType()
+			
+			boolean isAccessible = ESAPI.accessController().isAuthorizedToView(imageSObjectType, new List<String>{'Name','OwnerId','ImageViewType','ImageTitle','ImageAlternateText','ImageUrl','IsActive','ImageClass','ImageClassObjectType','ContentDocumentId','CapturedAngle '});
+			System.assert(!isAccessible, 'Not expecting to have access to view Image records');
+		}
+	}
+
+	@IsTest
+	static void runasProfileNotAuthorizedToViewSObjectField() {
+		User u = testReadOnlyUser(true);
+
+		PermissionSet ps = new PermissionSet(Label = 'mockPs', Name = 'mockPs');
+		insert ps;
+
+		// https://gist.github.com/soapboxjoe/8333202
+		ObjectPermissions contactObjectPermission = new ObjectPermissions(SobjectType = 'Contact',
+																	ParentId = ps.Id,
+																	PermissionsCreate = false,
+																	PermissionsDelete = false,
+																	PermissionsEdit = false,
+																	PermissionsRead = true
+																);
+		insert contactObjectPermission;	
+
+		PermissionSetAssignment psa = new PermissionSetAssignment(PermissionSetId = ps.Id, AssigneeId = u.Id);
+		insert psa; 
+
+		System.runAs(u) {
+			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+			ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+			
+			List<string> readWriteFields = new List<String>{'Account','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','Title','Department','AssistantName','LeadSource','Birthdate','Description','Jigsaw','CleanStatus'};
+			// OtherAddress - 'OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','OtherGeocodeAccuracy',
+			readWriteFields.add('OtherAddress');
+			// MailingAddress - 'MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','MailingGeocodeAccuracy'
+			readWriteFields.add('MailingAddress');
+			
+			List<FieldPermissions> readWritePerms = createFieldPermissions('Contact', ps.Id, true, true, readWriteFields);
+			insert readWritePerms;
+
+			List<String> fieldsToCheck = new List<String>{'LastName','FirstName','Salutation','OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','ReportsToId','Title','Department','AssistantName','LeadSource','Birthdate','Description','OwnerId','EmailBouncedReason','EmailBouncedDate','Jigsaw','CleanStatus', 'Email'};
+			// Not expected to have access to the DoNotCall field
+			fieldsToCheck.add('DoNotCall');
+			System.assert(!SObjectType.Contact.fields.DoNotCall.isCreateable());
+			System.assert(!SObjectType.Contact.fields.DoNotCall.isUpdateable()); 
+
+			boolean isAccessible = ESAPI.accessController().isAuthorizedToView(Schema.Contact.getSobjectType(), fieldsToCheck);
+			System.assert(!isAccessible, 'Not expecting to have access to view Contact DoNotCall fields');
+
+			List<Schema.SObjectField> schemaSObjectFields = schemaSObjectFields(Schema.Contact.getSobjectType(), fieldsToCheck);
+
+			isAccessible = ESAPI.accessController().isAuthorizedToView(Schema.Contact.getSobjectType(), schemaSObjectFields);
+			System.assert(!isAccessible, 'Not expecting to have access to view Contact DoNotCall records');
+		}
+	}
+	//#endregion
+
+	//#region isAuthorizedToCreate
+	@IsTest
+	static void runasProfileNotAuthorizedToCreateSObject() {
+		User u = testReadOnlyUser(true);
+
+		PermissionSet ps = new PermissionSet(Label = 'mockPs', Name = 'mockPs');
+		insert ps;
+
+		// https://gist.github.com/soapboxjoe/8333202
+		ObjectPermissions contactObjectPermission = new ObjectPermissions(SobjectType = 'Contact',
+																	ParentId = ps.Id,
+																	PermissionsCreate = false,
+																	PermissionsDelete = false,
+																	PermissionsEdit = false,
+																	PermissionsRead = true
+																);
+		insert contactObjectPermission;	
+
+		PermissionSetAssignment psa = new PermissionSetAssignment(PermissionSetId = ps.Id, AssigneeId = u.Id);
+		insert psa; 
+
+		System.runAs(u) {
+			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+			ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+			
+			List<string> readWriteFields = new List<String>{'Account','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','Title','Department','AssistantName','LeadSource','Birthdate','Description','Jigsaw','CleanStatus'};
+			// OtherAddress - 'OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','OtherGeocodeAccuracy',
+			readWriteFields.add('OtherAddress');
+			// MailingAddress - 'MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','MailingGeocodeAccuracy'
+			readWriteFields.add('MailingAddress');
+			
+			List<FieldPermissions> readWritePerms = createFieldPermissions('Contact', ps.Id, true, true, readWriteFields);
+			insert readWritePerms;
+
+			List<String> fieldsToCheck = new List<String>{'LastName','FirstName','Salutation','OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','ReportsToId','Title','Department','AssistantName','LeadSource','Birthdate','Description','OwnerId','EmailBouncedReason','EmailBouncedDate','Jigsaw','CleanStatus', 'Email'};
+
+			boolean isAccessible = ESAPI.accessController().isAuthorizedToCreate(Schema.Contact.getSobjectType(), fieldsToCheck);
+			System.assert(!isAccessible, 'Not expecting to have access to Create Contact records');
+		}
+	}
+
+	@IsTest
+	static void runasProfileAuthorizedToCreateSObject() {
+		User u = testReadOnlyUser(true);
+
+		PermissionSet ps = new PermissionSet(Label = 'mockPs', Name = 'mockPs');
+		insert ps;
+
+		// https://gist.github.com/soapboxjoe/8333202
+		ObjectPermissions contactObjectPermission = new ObjectPermissions(SobjectType = 'Contact',
+																	ParentId = ps.Id,
+																	PermissionsCreate = true,
+																	PermissionsDelete = false,
+																	PermissionsEdit = false,
+																	PermissionsRead = true
+																);
+		insert contactObjectPermission;	
+
+		PermissionSetAssignment psa = new PermissionSetAssignment(PermissionSetId = ps.Id, AssigneeId = u.Id);
+		insert psa; 
+
+		List<string> readWriteFields = new List<String>{'Account','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','Title','Department','AssistantName','LeadSource','Birthdate','Description','Jigsaw','CleanStatus', 'Email'};
+		// OtherAddress - 'OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','OtherGeocodeAccuracy',
+		readWriteFields.add('OtherAddress');
+		// MailingAddress - 'MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','MailingGeocodeAccuracy'
+		readWriteFields.add('MailingAddress');
+
+		List<FieldPermissions> readWritePerms = createFieldPermissions('Contact', ps.Id, true, true, readWriteFields);
+
+		insert readWritePerms;
+
+		System.runAs(u) {
+			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+			ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+
+			List<String> fieldsToCheck = new List<String>{'LastName','FirstName','Salutation','OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','ReportsToId','Title','Department','AssistantName','LeadSource','Birthdate','Description','OwnerId','EmailBouncedReason','EmailBouncedDate','Jigsaw','CleanStatus', 'Email'};
+
+			boolean isAccessible = ESAPI.accessController().isAuthorizedToCreate(Schema.Contact.getSobjectType(), fieldsToCheck);
+			System.assert(isAccessible, 'Expecting to have access to Create Contact records');
+		}
+	}
+	//#endregion
+
+	//#region isAuthorizedToUpdate
+	@IsTest
+	static void runasProfileNotAuthorizedToUpdateSObject() {
+		User u = testReadOnlyUser(true);
+
+		PermissionSet ps = new PermissionSet(Label = 'mockPs', Name = 'mockPs');
+		insert ps;
+
+		// https://gist.github.com/soapboxjoe/8333202
+		ObjectPermissions contactObjectPermission = new ObjectPermissions(SobjectType = 'Contact',
+																	ParentId = ps.Id,
+																	PermissionsCreate = false,
+																	PermissionsDelete = false,
+																	PermissionsEdit = false,
+																	PermissionsRead = true
+																);
+		insert contactObjectPermission;	
+
+		PermissionSetAssignment psa = new PermissionSetAssignment(PermissionSetId = ps.Id, AssigneeId = u.Id);
+		insert psa; 
+
+		System.runAs(u) {
+			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+			ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+			
+			List<string> readWriteFields = new List<String>{'Account','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','Title','Department','AssistantName','LeadSource','Birthdate','Description','Jigsaw','CleanStatus'};
+			// OtherAddress - 'OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','OtherGeocodeAccuracy',
+			readWriteFields.add('OtherAddress');
+			// MailingAddress - 'MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','MailingGeocodeAccuracy'
+			readWriteFields.add('MailingAddress');
+			
+			List<FieldPermissions> readWritePerms = createFieldPermissions('Contact', ps.Id, true, true, readWriteFields);
+			insert readWritePerms;
+
+			List<String> fieldsToCheck = new List<String>{'LastName','FirstName','Salutation','OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','ReportsToId','Title','Department','AssistantName','LeadSource','Birthdate','Description','OwnerId','EmailBouncedReason','EmailBouncedDate','Jigsaw','CleanStatus', 'Email'};
+
+			boolean isAccessible = ESAPI.accessController().isAuthorizedToUpdate(Schema.Contact.getSobjectType(), fieldsToCheck);
+			System.assert(!isAccessible, 'Not expecting to have access to Update Contact records');
+		}
+	}
+
+	@IsTest
+	static void runasProfileAuthorizedToUpdateSObject() {
+		User u = testReadOnlyUser(true);
+
+		PermissionSet ps = new PermissionSet(Label = 'mockPs', Name = 'mockPs');
+		insert ps;
+
+		// https://gist.github.com/soapboxjoe/8333202
+		ObjectPermissions contactObjectPermission = new ObjectPermissions(SobjectType = 'Contact',
+																	ParentId = ps.Id,
+																	PermissionsCreate = false,
+																	PermissionsDelete = false,
+																	PermissionsEdit = true,
+																	PermissionsRead = true
+																);
+		insert contactObjectPermission;	
+
+		PermissionSetAssignment psa = new PermissionSetAssignment(PermissionSetId = ps.Id, AssigneeId = u.Id);
+		insert psa; 
+
+		List<string> readWriteFields = new List<String>{'Account','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','Title','Department','AssistantName','LeadSource','Birthdate','Description','Jigsaw','CleanStatus', 'Email'};
+		// OtherAddress - 'OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','OtherGeocodeAccuracy',
+		readWriteFields.add('OtherAddress');
+		// MailingAddress - 'MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','MailingGeocodeAccuracy'
+		readWriteFields.add('MailingAddress');
+
+		List<FieldPermissions> readWritePerms = createFieldPermissions('Contact', ps.Id, true, true, readWriteFields);
+
+		insert readWritePerms;
+
+		System.runAs(u) {
+			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+			ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+
+			List<String> fieldsToCheck = new List<String>{'LastName','FirstName','Salutation','OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','ReportsToId','Title','Department','AssistantName','LeadSource','Birthdate','Description','OwnerId','EmailBouncedReason','EmailBouncedDate','Jigsaw','CleanStatus', 'Email'};
+
+			boolean isAccessible = ESAPI.accessController().isAuthorizedToUpdate(Schema.Contact.getSobjectType(), fieldsToCheck);
+			System.assert(isAccessible, 'Expecting to have access to Update Contact records');
+		}
+	}
+	//#endregion
     
+	private static List<Schema.SObjectField> schemaSObjectFields(Schema.SObjectType someType, List<string> fields) {
+		List<Schema.SObjectField> schemaFields = new List<Schema.SObjectField>();
+
+		Map<String, Schema.SObjectField> fieldMap = someType.getDescribe().fields.getMap();
+
+		for(string fieldName : fields) {
+       		schemaFields.add(fieldMap.get(fieldName));
+    	}
+
+		return schemaFields;
+	}
+
     static testMethod void testReturnedObjects() {
      	/* test return object and id with strings */
     	Contact tmp;
@@ -355,4 +898,18 @@ private class testAccessController {
     	
     	System.assert(arr.size() == max, 'testLimits');
     }
+
+	private static User testReadOnlyUser(boolean insertRecord) {
+		// Built in System profile
+		Profile readOnlyProfileId = [SELECT Id FROM Profile WHERE Name='Read Only'];
+
+		User u = new User(Alias = 'standt', Email='standarduser@esapi.com', 
+            EmailEncodingKey='UTF-8', LastName='Testing', LanguageLocaleKey='en_US', 
+            LocaleSidKey='en_US', ProfileId = readOnlyProfileId.Id, 
+            TimeZoneSidKey='America/Los_Angeles', UserName='standarduser@esapi.com');
+		if(insertRecord) {
+			insert u;
+		}
+		return u;
+	}
 }
