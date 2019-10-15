@@ -982,48 +982,71 @@ global class SFDCAccessController {
             if (devObj == null || fieldsToSet == null || fieldsToSet.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
             
-            Schema.DescribeSObjectResult d = devObj.getSObjectType().getDescribe();
-            if (d.isCreateable() == false) 
-                throw new SFDCAccessControlException('Access Violation', 
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
+            // Create a copy of the input sObject so any additional unrequested fields can be cleared out.
+            sObject cleanObj = devObj.clone(true, true, false, true);
+
+            // Use a quirk of the sObject field map to clear out fields that shouldn't be set.
+            Map<String, Object> fieldsToValue = cleanObj.getPopulatedFieldsAsMap();
+            Set<string> fieldsOnSObject = fieldsToValue.keySet();
+            for (String fieldName : fieldsOnSObject){
+                if(!fieldsToSet.contains(fieldName)) {
+                    // Remove the field value from the sObject as we don't want to set it.
+                    fieldsOnSObject.remove(fieldName);
+                }
+            }
+
+            List<SObject> sourceRecords = new List<SObject>();
+            sourceRecords.add(cleanObj);
+
+            System.SObjectAccessDecision decision = null;
+            try {
+                boolean enforceRootObjectCRUD = true;
+                decision = Security.stripInaccessible(
+                    AccessType.CREATABLE,
+                    sourceRecords,
+                    enforceRootObjectCRUD);
+            } catch (System.NoAccessException ex) {
+                // E.g. Message
+                // No access to entity: Contact
+                string sObjectName = ex.getMessage().substring(ex.getMessage().indexOf(':'));
+                throw new SFDCAccessControlException('Access Violation',
+                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION,
                                                         SFDCAccessControlException.ExceptionReason.NO_CREATE,
-                                                        d.getName(),
+                                                        sObjectName,
                                                         null);
+            }
 
-            Map<String, Schema.SObjectField> fieldMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(devObj.getSObjectType()); // potentially saves a fields call below
-            Set<String> creatableFields = fieldsToStringSet(getCreatableFields(fieldMap));
-            
-            // start from a fresh sObject of same type and only set fields the user is allowed to set
-            sObject cleanObj = devObj.getSObjectType().newSObject();
+            // Modified indexes
+            Set<Integer> modifiedIndexes = decision.getModifiedIndexes();
 
-            // set all fields that were requested and the user has permission to set - throw an exception if a field was requested and user can't set and in ALL_OR_NONE mode           
-            for (String fieldName : fieldsToSet) {
-                fieldName = fieldName.toLowerCase();
-                if (creatableFields == null || creatableFields.contains(fieldName) == false) {
-                    // creatableFields is either null which means no fields are allowed to be set by user, or is not null but does not contain the current fieldName
-                    if (omode == OperationMode.ALL_OR_NONE)
+            // Removed fields
+            Map<string, Set<string>> removedFields = decision.getRemovedFields();
+
+            if(omode == OperationMode.ALL_OR_NONE && !removedFields.isEmpty()) {
+                for(string firstSObjectType : removedFields.keySet()) {
+                    for(string firstSObjectField : removedFields.get(firstSObjectType)) {
                         // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
                         throw new SFDCAccessControlException('Access Violation', 
                                             SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
                                             SFDCAccessControlException.ExceptionReason.NO_CREATE,
-                                            d.getName(),
-                                            fieldName);
-                }
-                else {
-                    // user has permission to set fieldName and it was request by the developer - so set it
-                    // if the developer did not set this field and it is required, we should get an exception 
-                    // when we set it here, or when we perform the actual insert.
-                    cleanObj.put(fieldName, devObj.get(fieldName));
+                                            firstSObjectType,
+                                            firstSObjectField.toLowerCase());
+                    }
                 }
             }
-            
+
+            System.assert(modifiedIndexes.isEmpty() && removedFields.isEmpty(), 'modifiedIndexes:' + modifiedIndexes + ' removedFields:' + removedFields);
+
+            // Stripped records - these are safe to insert
+            List<SObject> afterRecords = decision.getRecords();
             try {
                 // call dbInsert() to enforce sharing rules if required
-                dbInsert(cleanObj);
+                dbInsert(afterRecords);
             } catch (Exception e) {
                 throw new AccessControlDmlException('Failed to insert object');
             }
-            return cleanObj;
+
+            return afterRecords[0];
         }
         
         /* Same as insertAsUser(SObject, List&lt;String&gt;) but with Schema.SObjectField instead of string.

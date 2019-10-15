@@ -203,6 +203,8 @@ private class testAccessController {
 		User u = testReadOnlyProfileUser(false);
 
 		System.runAs(u) {
+			System.assert(!SObjectType.Contact.createable, 'Not expecting to be able to insert Contacts');
+
 			try {
 				Contact c = new Contact();
 				c.LastName = 'ESAPI Test4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3';
