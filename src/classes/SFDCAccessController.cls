@@ -994,55 +994,18 @@ global class SFDCAccessController {
             // start from a fresh sObject of same type and only set the requested fields
             sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, null, SFDCAccessControlException.ExceptionReason.NO_CREATE);
 
-            List<SObject> sourceRecords = new List<SObject>();
-            sourceRecords.add(cleanObj);
-
-            System.SObjectAccessDecision decision = null;
-            try {
-                boolean enforceRootObjectCRUD = true;
-                decision = Security.stripInaccessible(
-                    AccessType.CREATABLE,
-                    sourceRecords,
-                    enforceRootObjectCRUD);
-            } catch (System.NoAccessException ex) {
-                // N.B. Currently checking this via isCreateable above as it wasn't throwing as expected in Winter '20
-                // E.g. Message:
-                //     No access to entity: Contact
-                string sObjectName = ex.getMessage().substring(ex.getMessage().indexOf(':'));
-                throw new SFDCAccessControlException('Access Violation',
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION,
-                                                        SFDCAccessControlException.ExceptionReason.NO_CREATE,
-                                                        sObjectName,
-                                                        null);
-            }
-
-            // Removed fields
-            Map<string, Set<string>> removedFields = decision.getRemovedFields();
-
-            if(omode == OperationMode.ALL_OR_NONE && !removedFields.isEmpty()) {
-                for(string firstSObjectType : removedFields.keySet()) {
-                    for(string firstSObjectField : removedFields.get(firstSObjectType)) {
-                        // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
-                        throw new SFDCAccessControlException('Access Violation', 
-                                            SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
-                                            SFDCAccessControlException.ExceptionReason.NO_CREATE,
-                                            firstSObjectType,
-                                            firstSObjectField.toLowerCase());
-                    }
-                }
-            }
-
             // Stripped records - these are safe to insert
-            List<SObject> afterRecords = decision.getRecords();
+            SObject strippedRecord =  securityStripping(cleanObj, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
+            
             try {
                 // call dbInsert() to enforce sharing rules if required
-                dbInsert(afterRecords[0]);
+                dbInsert(strippedRecord);
             } catch (Exception e) {
                 // Note, source exception is currently lost.
                 throw new AccessControlDmlException('Failed to insert object');
             }
 
-            return afterRecords[0];
+            return strippedRecord;
         }
         
         /* Same as insertAsUser(SObject, List&lt;String&gt;) but with Schema.SObjectField instead of string.
@@ -1051,6 +1014,7 @@ global class SFDCAccessController {
             if (devObj == null || fieldsToSet == null || fieldsToSet.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
             
+            // Keep this check for now as stripInaccessible isn't correctly enforcing create object permissions
             Schema.DescribeSObjectResult d = devObj.getSObjectType().getDescribe();
             if (d.isCreateable() == false) 
                 throw new SFDCAccessControlException('Access Violation', 
@@ -1059,33 +1023,17 @@ global class SFDCAccessController {
                                                         d.getName(),
                                                         null);
 
-            // start from a fresh sObject of same type and only set fields the user is allowed to set
-            sObject cleanObj = devObj.getSObjectType().newSObject();
+            // start from a fresh sObject of same type and only set the requested fields
+            sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, null, SFDCAccessControlException.ExceptionReason.NO_CREATE);
 
-            // set all fields that were requested and the user has permission to set - throw an exception if a field was requested and user can't set and in ALL_OR_NONE mode           
-            for (Schema.SObjectField field : fieldsToSet) {
-                if (field.getDescribe().isCreateable() == false) {
-                    // field is not allowed to be created by current user
-                    if (omode == OperationMode.ALL_OR_NONE)
-                        // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
-                        throw new SFDCAccessControlException('Access Violation', 
-                                            SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
-                                            SFDCAccessControlException.ExceptionReason.NO_CREATE,
-                                            d.getName(),
-                                            field.getDescribe().getName());
-                }
-                else {
-                    // user has permission to set fieldName and it was request by the developer - so set it
-                    // if the developer did not set this field and it is required, we should get an exception 
-                    // when we set it here, or when we perform the actual insert.
-                    cleanObj.put(field, devObj.get(field));
-                }
-            }
+            // Stripped records - these are safe to insert
+            SObject strippedRecord =  securityStripping(cleanObj, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, false);
             
             try {
                 // call dbInsert() to enforce sharing rules if required
                 dbInsert(cleanObj);
             } catch (Exception e) {
+                // Note, source exception is currently lost.
                 throw new AccessControlDmlException('Failed to insert object');
             }
             return cleanObj;
@@ -1138,54 +1086,19 @@ global class SFDCAccessController {
                 cleanObjs.add(cleanObj);
             }
 
-            System.SObjectAccessDecision decision = null;
-            try {
-                boolean enforceRootObjectCRUD = true;
-                decision = Security.stripInaccessible(
-                    AccessType.CREATABLE,
-                    cleanObjs,
-                    enforceRootObjectCRUD);
-            } catch (System.NoAccessException ex) {
-                // N.B. Currently checking this via isCreateable above as it wasn't throwing as expected in Winter '20
-                // E.g. Message:
-                //     No access to entity: Contact
-                string sObjectName = ex.getMessage().substring(ex.getMessage().indexOf(':'));
-                throw new SFDCAccessControlException('Access Violation',
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION,
-                                                        SFDCAccessControlException.ExceptionReason.NO_CREATE,
-                                                        sObjectName,
-                                                        null);
-            }
-
-            // Removed fields
-            Map<string, Set<string>> removedFields = decision.getRemovedFields();
-
-            if(omode == OperationMode.ALL_OR_NONE && !removedFields.isEmpty()) {
-                for(string firstSObjectType : removedFields.keySet()) {
-                    for(string firstSObjectField : removedFields.get(firstSObjectType)) {
-                        // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
-                        throw new SFDCAccessControlException('Access Violation', 
-                                            SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
-                                            SFDCAccessControlException.ExceptionReason.NO_CREATE,
-                                            firstSObjectType,
-                                            firstSObjectField.toLowerCase());
-                    }
-                }
-            }
-
             // Stripped records - these are safe to insert
-            List<SObject> afterRecords = decision.getRecords();
+            List<SObject> strippedRecords =  securityStripping(cleanObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
             
             Database.SaveResult [] results = null;
             try {
                 // call dbInsert() to enforce sharing rules if required
-                results = dbInsert(afterRecords);
+                results = dbInsert(strippedRecords);
             } catch (Exception e) {
                 // Note, source exception is currently lost.
                 throw new AccessControlDmlException('Failed to insert objects');
             }
             
-            return new SFDCAccessControlResults.InsertResults(afterRecords, results);
+            return new SFDCAccessControlResults.InsertResults(strippedRecords, results);
         }
 
         /* Same as insertAsUser(SObject [], List&lt;String&gt;) but with Schema.SObjectField instead of string.
@@ -1194,6 +1107,7 @@ global class SFDCAccessController {
             if (devObjs == null || devObjs.size() == 0 || fieldsToSet == null || fieldsToSet.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
             
+            // Keep this check for now as stripInaccessible isn't correctly enforcing create object permissions
             Schema.DescribeSObjectResult d = devObjs.getSObjectType().getDescribe();
             if (d.isCreateable() == false) 
                 throw new SFDCAccessControlException('Access Violation', 
@@ -1202,51 +1116,42 @@ global class SFDCAccessController {
                                                         d.getName(),
                                                         null);
 
-            /* 
-              create a clean array by cloning the array, empty it, and refill the member objects by creating clean ones.
-              We can't just create an array of sObjects and add the objects using devObj.getSObjectType().newSObject(); 
-              because it will fail on insert. The error will be: System.TypeException: DML not allowed on abstract class SObject
-            */
-            sObject [] cleanObjs = devObjs.clone();
-            cleanObjs.clear();
+            sObject [] cleanObjs = null;
+            Schema.SObjectType sObjectType = devObjs.getSObjectType();
+            if(sObjectType != null) {
+                // Homogeneous list
+                // Apex Cast sObject list dynamically to a specific sObject Type https://salesforce.stackexchange.com/a/88385/102
+                String listType = 'List<' + sObjectType + '>';
+                cleanObjs = (List<SObject>)Type.forName(listType).newInstance();
+            } else {
+                // Heterogeneous list
+                /* 
+                create a clean array by cloning the array, empty it, and refill the member objects by creating clean ones.
+                We can't just create an array of sObjects and add the objects using devObj.getSObjectType().newSObject(); 
+                because it will fail on insert. The error will be: System.TypeException: DML not allowed on abstract class SObject
+                */
+                cleanObjs = devObjs.clone();
+                cleanObjs.clear();
+            }
             
-            // for each object in the array set only creatable fields
-            for (sObject devObj: devObjs) {
-                // start from a fresh sObject of same type and only set fields the user is allowed to set
-                sObject cleanObj = devObj.getSObjectType().newSObject();
-    
-                // set all fields that were requested and the user has permission to set - throw an exception if a field was requested and user can't set and in ALL_OR_NONE mode           
-                for (Schema.SObjectField field : fieldsToSet) {
-                    if (field.getDescribe().isCreateable() == false) {
-                        // field is not allowed to be created by current user
-                        if (omode == OperationMode.ALL_OR_NONE)
-                            // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
-                            throw new SFDCAccessControlException('Access Violation', 
-                                                SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
-                                                SFDCAccessControlException.ExceptionReason.NO_CREATE,
-                                                d.getName(),
-                                                field.getDescribe().getName());
-                    }
-                    else {
-                        // user has permission to set fieldName and it was request by the developer - so set it
-                        // if the developer did not set this field and it is required, we should get an exception 
-                        // when we set it here, or when we perform the actual insert.
-                        cleanObj.put(field, devObj.get(field));
-                    }
-                }
-                
+            // for each object in the array set only requested fields
+            for (sObject devObj : devObjs) {
+                sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, null, SFDCAccessControlException.ExceptionReason.NO_CREATE);
                 cleanObjs.add(cleanObj);
             }
+
+            // Stripped records - these are safe to insert
+            List<SObject> strippedRecords =  securityStripping(cleanObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, false);
             
             Database.SaveResult [] results = null;
             try {
                 // call dbInsert() to enforce sharing rules if required
-                results = dbInsert(cleanObjs);
+                results = dbInsert(strippedRecords);
             } catch (Exception e) {
                 throw new AccessControlDmlException('Failed to insert objects');
             }
             
-            return new SFDCAccessControlResults.InsertResults(cleanObjs, results);
+            return new SFDCAccessControlResults.InsertResults(strippedRecords, results);
         }
         
         /* Check to see if the user can update this object.
@@ -1260,6 +1165,7 @@ global class SFDCAccessController {
             if (devObj == null || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
             
+            // Keep this check for now as stripInaccessible isn't correctly enforcing update object permissions - Winter '20
             Schema.DescribeSObjectResult d = devObj.getSObjectType().getDescribe();
             if (d.isUpdateable() == false) 
                 throw new SFDCAccessControlException('Access Violation', 
@@ -1267,8 +1173,6 @@ global class SFDCAccessController {
                                                         SFDCAccessControlException.ExceptionReason.NO_UPDATE,
                                                         d.getName(),
                                                         null);
-                                                        
-            //Map<String,Schema.SObjectField> fieldsMap = SFDCPlugins.SFDC_DescribeInfoCache.fieldMapFor(devObj.getSObjectType());
             
             // first load the existing object as current user (enforcing sharing based on sharing mode)
             SObject cleanObj = getObject(devObj);
@@ -1279,57 +1183,20 @@ global class SFDCAccessController {
                                                         d.getName(),
                                                         null);
 
-            //Set<String> updateableFields = fieldsToStringSet(getUpdateableFields(fieldsMap));
-            
             // set all fields that were requested
             cleanObjToGivenFields(devObj, fieldsToUpdate, cleanObj, SFDCAccessControlException.ExceptionReason.NO_UPDATE);
             
-            List<SObject> sourceRecords = new List<SObject>();
-            sourceRecords.add(cleanObj);
+            // Stripped record - this is safe to update
+            SObject strippedRecord =  securityStripping(cleanObj, AccessType.UPDATABLE, SFDCAccessControlException.ExceptionReason.NO_UPDATE, true);
 
-            System.SObjectAccessDecision decision = null;
-            try {
-                boolean enforceRootObjectCRUD = true;
-                decision = Security.stripInaccessible(
-                    AccessType.UPDATABLE,
-                    sourceRecords,
-                    enforceRootObjectCRUD);
-            } catch (System.NoAccessException ex) {
-                // No access to entity: Contact
-                string sObjectName = ex.getMessage().substring(ex.getMessage().indexOf(':'));
-                throw new SFDCAccessControlException('Access Violation', 
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
-                                                        SFDCAccessControlException.ExceptionReason.NO_UPDATE,
-                                                        sObjectName,
-                                                        null);
-            }
-
-            // removed fields
-            Map<string, Set<string>> removedFields = decision.getRemovedFields();
-
-            if(omode == OperationMode.ALL_OR_NONE && !removedFields.isEmpty()) {
-                for(string firstSObjectType : removedFields.keySet()) {
-                    for(string firstSObjectField : removedFields.get(firstSObjectType)) {
-                        // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
-                        throw new SFDCAccessControlException('Access Violation', 
-                                            SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
-                                            SFDCAccessControlException.ExceptionReason.NO_UPDATE,
-                                            firstSObjectType,
-                                            firstSObjectField.toLowerCase());
-                    }
-                }
-            }
-
-            // stripped records - these are safe to update
-            List<SObject> afterRecords = decision.getRecords();
             try {
                 // call dbUpdate() to enforce sharing rules if required
-                dbUpdate(afterRecords);
+                dbUpdate(strippedRecord);
             } catch (Exception e) {
                 // Note, source exception is currently lost.
-                throw new AccessControlDmlException('Failed to update object ' + e.getMessage());
+                throw new AccessControlDmlException('Failed to update object');
             }
-            return afterRecords[0];
+            return strippedRecord;
         }
         
         /* Same as updateAsUser(SObject, List&lt;String&gt;) but with Schema.SObjectField instead of string.
@@ -1338,6 +1205,7 @@ global class SFDCAccessController {
             if (devObj == null || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
             
+            // Keep this check for now as stripInaccessible isn't correctly enforcing update object permissions - Winter '20
             Schema.DescribeSObjectResult d = devObj.getSObjectType().getDescribe();
             if (d.isUpdateable() == false) 
                 throw new SFDCAccessControlException('Access Violation', 
@@ -1355,31 +1223,19 @@ global class SFDCAccessController {
                                                         d.getName(),
                                                         null);
 
-            // set all fields that were requested and the user has permission to update - throw an exception if a field was requested and user can't update and in ALL_OR_NONE mode         
-            for (Schema.SObjectField field : fieldsToUpdate) {
-                if (field.getDescribe().isUpdateable() == false) {
-                    // field is not allowed to be updated by current user
-                    if (omode == OperationMode.ALL_OR_NONE)
-                        // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to update fieldName
-                        throw new SFDCAccessControlException('Access Violation', 
-                                            SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
-                                            SFDCAccessControlException.ExceptionReason.NO_UPDATE,
-                                            d.getName(),
-                                            field.getDescribe().getName());
-                }
-                else {
-                    // user has permission to update fieldName and it was request by the developer - so update it
-                    cleanObj.put(field, devObj.get(field));
-                }
-            }
+            // set all fields that were requested
+            cleanObjToGivenFields(devObj, fieldsToUpdate, cleanObj, SFDCAccessControlException.ExceptionReason.NO_UPDATE);
+
+            // Stripped record - this is safe to update
+            SObject strippedRecord =  securityStripping(cleanObj, AccessType.UPDATABLE, SFDCAccessControlException.ExceptionReason.NO_UPDATE, false);
             
             try {
                 // call dbUpdate() to enforce sharing rules if required
-                dbUpdate(cleanObj);
+                dbUpdate(strippedRecord);
             } catch (Exception e) {
                 throw new AccessControlDmlException('Failed to update object');
             }
-            return cleanObj;
+            return strippedRecord;
         }
 
         /* Check to see if the user can update these objects.
@@ -1433,52 +1289,19 @@ global class SFDCAccessController {
                 cleanObjToGivenFields(devObj, fieldsToUpdate, cleanObj, SFDCAccessControlException.ExceptionReason.NO_UPDATE);
             }
 
-            System.SObjectAccessDecision decision = null;
-            try {
-                boolean enforceRootObjectCRUD = true;
-                decision = Security.stripInaccessible(
-                    AccessType.UPDATABLE,
-                    cleanObjs,
-                    enforceRootObjectCRUD);
-            } catch (System.NoAccessException ex) {
-                // No access to entity: Contact
-                string sObjectName = ex.getMessage().substring(ex.getMessage().indexOf(':'));
-                throw new SFDCAccessControlException('Access Violation', 
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
-                                                        SFDCAccessControlException.ExceptionReason.NO_UPDATE,
-                                                        sObjectName,
-                                                        null);
-            }
+            // Stripped records - these are safe to update
+            List<SObject> strippedRecords =  securityStripping(cleanObjs, AccessType.UPDATABLE, SFDCAccessControlException.ExceptionReason.NO_UPDATE, true);
 
-            // removed fields
-            Map<string, Set<string>> removedFields = decision.getRemovedFields();
-
-            if(omode == OperationMode.ALL_OR_NONE && !removedFields.isEmpty()) {
-                for(string firstSObjectType : removedFields.keySet()) {
-                    for(string firstSObjectField : removedFields.get(firstSObjectType)) {
-                        // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
-                        throw new SFDCAccessControlException('Access Violation', 
-                                            SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
-                                            SFDCAccessControlException.ExceptionReason.NO_UPDATE,
-                                            firstSObjectType,
-                                            firstSObjectField.toLowerCase());
-                    }
-                }
-            }
-
-            // stripped records - these are safe to update
-            List<SObject> afterRecords = decision.getRecords();
-            
             Database.SaveResult [] results = null;
             try {
                 // call dbUpdate() to enforce sharing rules if required
-                results = dbUpdate(afterRecords);
+                results = dbUpdate(strippedRecords);
             } catch (Exception e) {
                 // Note, source exception is currently lost.
                 throw new AccessControlDmlException('Failed to update objects');
             }
             
-            return new SFDCAccessControlResults.UpdateResults(afterRecords, results);
+            return new SFDCAccessControlResults.UpdateResults(strippedRecords, results);
         }
         
         /* Same as updateAsUser(Map&lt;ID, sObject&gt;, List&lt;String&gt;) but with Schema.SObjectField instead of string.
@@ -1521,34 +1344,22 @@ global class SFDCAccessController {
 
                 sObject devObj = devMap.get(cleanObj.id);
 
-                // set all fields that were requested and the user has permission to update - throw an exception if a field was requested and user can't update and in ALL_OR_NONE mode         
-                for (Schema.SObjectField field : fieldsToUpdate) {
-                    if (field.getDescribe().isUpdateable() == false) {
-                        // field is not allowed to be updated by current user
-                        if (omode == OperationMode.ALL_OR_NONE)
-                            // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to update fieldName
-                            throw new SFDCAccessControlException('Access Violation', 
-                                                SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
-                                                SFDCAccessControlException.ExceptionReason.NO_UPDATE,
-                                                d.getName(),
-                                                field.getDescribe().getName());
-                    }
-                    else {
-                        // user has permission to update fieldName and it was request by the developer - so update it
-                        cleanObj.put(field, devObj.get(field));
-                    }
-                }
+                // set all fields that were requested
+                cleanObjToGivenFields(devObj, fieldsToUpdate, cleanObj, SFDCAccessControlException.ExceptionReason.NO_UPDATE);
             }
+
+            // Stripped records - these are safe to update
+            List<SObject> strippedRecords =  securityStripping(cleanObjs, AccessType.UPDATABLE, SFDCAccessControlException.ExceptionReason.NO_UPDATE, false);
             
             Database.SaveResult [] results = null;
             try {
                 // call dbUpdate() to enforce sharing rules if required
-                results = dbUpdate(cleanObjs);
+                results = dbUpdate(strippedRecords);
             } catch (Exception e) {
                 throw new AccessControlDmlException('Failed to update objects');
             }
             
-            return new SFDCAccessControlResults.UpdateResults(cleanObjs, results);
+            return new SFDCAccessControlResults.UpdateResults(strippedRecords, results);
         }
 
         /* Check to see if the user can delete this object. Throw exception if not. If he can, delete the object.
@@ -1609,6 +1420,9 @@ global class SFDCAccessController {
             return someType.getDescribe().isDeletable();
         }
 
+        /*
+         * Populate the cleanObj with only the fields defined in fieldsToSet from devObj. Create an empty cleanObj if required
+         */
         private sObject cleanObjToGivenFields(sObject devObj, List<string> fieldsToSet, sObject cleanObj, SFDCAccessControlException.ExceptionReason reason) {
             if(cleanObj == null) {
                 // start from a fresh sObject of same type and only set fields requested
@@ -1628,8 +1442,8 @@ global class SFDCAccessController {
                         Schema.DescribeSObjectResult d = devObj.getSObjectType().getDescribe();
 
                         throw new SFDCAccessControlException('Access Violation', 
-                                            SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
-                                            reason, //SFDCAccessControlException.ExceptionReason.NO_CREATE,
+                                            SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION,
+                                            reason,
                                             d.getName(),
                                             fieldName);
                     }
@@ -1651,13 +1465,50 @@ global class SFDCAccessController {
             // }
         }
 
-        private SObject securityStripping(SObject sourceRecord, AccessType accessType, SFDCAccessControlException.ExceptionReason reason) {
+        /*
+         * Populate the cleanObj with only the fields defined in fieldsToSet from devObj. Create an empty cleanObj if required
+         */
+        private sObject cleanObjToGivenFields(sObject devObj, List<Schema.SObjectField> fieldsToSet, sObject cleanObj, SFDCAccessControlException.ExceptionReason reason) {
+            if(cleanObj == null) {
+                // start from a fresh sObject of same type and only set fields requested
+                cleanObj = devObj.getSObjectType().newSObject();
+            }
+
+            // set all fields that were requested
+            for (Schema.SObjectField field : fieldsToSet) {
+                try {
+                    if(devObj.isSet(field)) {
+                        cleanObj.put(field, devObj.get(field));
+                    }
+                } catch (System.SObjectException ex) {
+                    if (omode == OperationMode.ALL_OR_NONE) {
+                        // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
+                        Schema.DescribeSObjectResult d = devObj.getSObjectType().getDescribe();
+
+                        throw new SFDCAccessControlException('Access Violation', 
+                                            SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION,
+                                            reason,
+                                            d.getName(),
+                                            field.getDescribe().getName());
+                    }
+                }
+            }
+            return cleanObj;
+        }
+
+        /*
+         * Check for the applicable CRUD and FLS for the given sObject and access type.
+         */
+        private SObject securityStripping(SObject sourceRecord, AccessType accessType, SFDCAccessControlException.ExceptionReason reason, boolean lowerCaseFieldName) {
             List<SObject> sourceRecords = new List<SObject>{sourceRecord};
-            List<SObject> afterRecords = securityStripping(sourceRecords, accessType, reason);
+            List<SObject> afterRecords = securityStripping(sourceRecords, accessType, reason, lowerCaseFieldName);
             return afterRecords[0];
         }
 
-        private List<SObject> securityStripping(List<SObject> sourceRecords, AccessType accessType, SFDCAccessControlException.ExceptionReason reason) {
+        /*
+         * Check for the applicable CRUD and FLS for the given sObjects and access type.
+         */
+        private List<SObject> securityStripping(List<SObject> sourceRecords, AccessType accessType, SFDCAccessControlException.ExceptionReason reason, boolean lowerCaseFieldName) {
 
             System.SObjectAccessDecision decision = null;
             try {
@@ -1685,11 +1536,16 @@ global class SFDCAccessController {
                 for(string firstSObjectType : removedFields.keySet()) {
                     for(string firstSObjectField : removedFields.get(firstSObjectType)) {
                         // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
+
+                        // If the fields are defined as strings the exception expects the field name lower case
+                        // For a SObjectField, unchanged
+                        string fieldName = (lowerCaseFieldName) ? firstSObjectField.toLowerCase() : firstSObjectField;
+
                         throw new SFDCAccessControlException('Access Violation', 
                                             SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
                                             reason,
                                             firstSObjectType,
-                                            firstSObjectField.toLowerCase());
+                                            fieldName);
                     }
                 }
             }
