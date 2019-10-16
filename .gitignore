@@ -4,6 +4,7 @@
 
 # Salesforce cache
 .sfdx/
+.vscode/settings.json
 
 # Logs
 logs
