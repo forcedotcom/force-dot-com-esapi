@@ -1,0 +1,10 @@
+{
+  "orgName": "ESAPI Dev Org",
+  "edition": "Developer",
+  "features": [],
+  "settings": {
+    "lightningExperienceSettings": {
+      "enableS1DesktopEnabled": true
+    }
+  }
+}
