@@ -9,10 +9,20 @@ Follow the steps below to get started. For more detailed documentation on this l
 
 ## Getting started
 
+__We reccomend using a release tag instead of the master branch unless you intend to contribute to ESAPI or need unreleased features.__
+
 1. Download the latest release from the download page.
 2. Make any modifications in the code if you need additional functionality not covered by the library.
 3. Upload the classes to your Force.com Org.
 4. Start using it in your other classes.
+
+OR
+
+One-click deployment of the latest stable release ("stable" tag):
+<a href="https://githubsfdeploy.herokuapp.com?owner=forcedotcom&repo=force-dot-com-esapi&ref=stable">
+  <img alt="Deploy to Salesforce"
+       src="https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/deploy.png">
+</a>
 
 ## Package Installation
 
