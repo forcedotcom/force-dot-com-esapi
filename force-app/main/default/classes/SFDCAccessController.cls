@@ -1063,34 +1063,39 @@ global class SFDCAccessController {
                                                         d.getName(),
                                                         null);
             
-            sObject [] cleanObjs = null;
-            if(sObjectType != null) {
-                // Homogeneous list
-                // Apex Cast sObject list dynamically to a specific sObject Type https://salesforce.stackexchange.com/a/88385/102
-                String listType = 'List<' + sObjectType + '>';
-                cleanObjs = (List<SObject>)Type.forName(listType).newInstance();
-            } else {
-                // Heterogeneous list - is this supported by ESAPI? The isCreateable check would have already failed for this scenario
-                /* 
-                create a clean array by cloning the array, empty it, and refill the member objects by creating clean ones.
-                We can't just create an array of sObjects and add the objects using devObj.getSObjectType().newSObject(); 
-                because it will fail on insert. The error will be: System.TypeException: DML not allowed on abstract class SObject
-                */
-                cleanObjs = devObjs.clone();
-                cleanObjs.clear();
-            }
+            // Stripped records - these are safe to insert
+            List<SObject> strippedRecords =  securityStripping(devObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
+
+            // sObject [] cleanObjs = null;
+            // if(sObjectType != null) {
+            //     // Homogeneous list
+            //     // Apex Cast sObject list dynamically to a specific sObject Type https://salesforce.stackexchange.com/a/88385/102
+            //     String listType = 'List<' + sObjectType + '>';
+            //     cleanObjs = (List<SObject>)Type.forName(listType).newInstance();
+            // } else {
+            //     // Heterogeneous list - is this supported by ESAPI? The isCreateable check would have already failed for this scenario
+            //     /* 
+            //     create a clean array by cloning the array, empty it, and refill the member objects by creating clean ones.
+            //     We can't just create an array of sObjects and add the objects using devObj.getSObjectType().newSObject(); 
+            //     because it will fail on insert. The error will be: System.TypeException: DML not allowed on abstract class SObject
+            //     */
+            //     cleanObjs = devObjs.clone();
+            //     cleanObjs.clear();
+            // }
             
             // for each object in the array set only requested fields
-            //sObject theBase = sObjectType.newSObject();
-            for (sObject devObj : devObjs) {
-                //sObject cleanObj = theBase.clone();
+            for (sObject devObj : strippedRecords) {
                 sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, null, SFDCAccessControlException.ExceptionReason.NO_CREATE);
-                cleanObjs.add(cleanObj);
+                if(cleanObj !== devObj) {
+                    // Fields have been removed
+                    strippedRecords.set(strippedRecords.indexOf(devObj), cleanObj);
+                }
+
             }
 
             // Stripped records - these are safe to insert
-            List<SObject> strippedRecords =  securityStripping(cleanObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
-            cleanObjs = null;
+            //List<SObject> strippedRecords =  securityStripping(cleanObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
+            //cleanObjs = null;
             
             Database.SaveResult [] results = null;
             try {
@@ -1613,17 +1618,23 @@ global class SFDCAccessController {
         private SObject [] getObjects(sObject [] objArray) {
             
             String Soql = 'SELECT Id FROM ' + objArray.getSObjectType().getDescribe().getName() + ' WHERE ';
-            Boolean emptyIds = true;
+            //Boolean emptyIds = true;
             
             // add all Ids
-            for (SObject obj : objArray) {
-                if (emptyIds == false)
-                    Soql += ' or ';
-                else
-                    emptyIds = false;
+            // for (SObject obj : objArray) {
+            //     if (emptyIds == false)
+            //         Soql += ' or ';
+            //     else
+            //         emptyIds = false;
                 
-                Soql += 'ID=\'' + String.escapeSingleQuotes(obj.Id) + '\'';
-            }
+            //     Soql += 'ID=\'' + String.escapeSingleQuotes(obj.Id) + '\'';
+            // }
+
+            // It isn't possible to pass the ID collection as a SOQL binding variable into dbQuery
+            List<Id> objIds = new List<Id>(new Map<Id, sobject>(objArray).keySet());
+            // No need to escapeSingleQuotes the ID's as they came from the Map keys
+            string csIds = String.join(objIds, '\',\'');
+            Soql += 'ID in (\'' + csIds + '\')';
             
             List<SObject> res;
             
@@ -1631,7 +1642,7 @@ global class SFDCAccessController {
                 // call dbQuery() to enforce sharing rules if required
                 res = dbQuery(Soql);
             } catch (Exception e) {
-                throw new AccessControlDmlException('Failed to query object');
+                throw new AccessControlDmlException('Failed to query object ' + Soql);
             }
             
             return res;
