@@ -1063,39 +1063,44 @@ global class SFDCAccessController {
                                                         d.getName(),
                                                         null);
             
+            // One potential optimization is to use the security stripping early to create the safe sObject List
+            // Then we don't need to create and populate the new list.
+            // However, that doesn't allow for fieldsToSet to exclude the problem fields...
+            // Pass fieldsToSet into securityStripping? Then they can be ignored as requird!
             // Stripped records - these are safe to insert
-            List<SObject> strippedRecords =  securityStripping(devObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
+            //List<SObject> strippedRecords =  securityStripping(devObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
 
-            // sObject [] cleanObjs = null;
-            // if(sObjectType != null) {
-            //     // Homogeneous list
-            //     // Apex Cast sObject list dynamically to a specific sObject Type https://salesforce.stackexchange.com/a/88385/102
-            //     String listType = 'List<' + sObjectType + '>';
-            //     cleanObjs = (List<SObject>)Type.forName(listType).newInstance();
-            // } else {
-            //     // Heterogeneous list - is this supported by ESAPI? The isCreateable check would have already failed for this scenario
-            //     /* 
-            //     create a clean array by cloning the array, empty it, and refill the member objects by creating clean ones.
-            //     We can't just create an array of sObjects and add the objects using devObj.getSObjectType().newSObject(); 
-            //     because it will fail on insert. The error will be: System.TypeException: DML not allowed on abstract class SObject
-            //     */
-            //     cleanObjs = devObjs.clone();
-            //     cleanObjs.clear();
-            // }
+            sObject [] cleanObjs = null;
+            if(sObjectType != null) {
+                // Homogeneous list
+                // Apex Cast sObject list dynamically to a specific sObject Type https://salesforce.stackexchange.com/a/88385/102
+                String listType = 'List<' + sObjectType + '>';
+                cleanObjs = (List<SObject>)Type.forName(listType).newInstance();
+            } else {
+                // Heterogeneous list - is this supported by ESAPI? The isCreateable check would have already failed for this scenario
+                /* 
+                create a clean array by cloning the array, empty it, and refill the member objects by creating clean ones.
+                We can't just create an array of sObjects and add the objects using devObj.getSObjectType().newSObject(); 
+                because it will fail on insert. The error will be: System.TypeException: DML not allowed on abstract class SObject
+                */
+                cleanObjs = devObjs.clone();
+                cleanObjs.clear();
+            }
             
             // for each object in the array set only requested fields
-            for (sObject devObj : strippedRecords) {
+            for (sObject devObj : devObjs) {
                 sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, null, SFDCAccessControlException.ExceptionReason.NO_CREATE);
-                if(cleanObj !== devObj) {
-                    // Fields have been removed
-                    strippedRecords.set(strippedRecords.indexOf(devObj), cleanObj);
-                }
+                cleanObjs.add(cleanObj);
+                // if(cleanObj !== devObj) {
+                //     // Fields have been removed. Replace the stripped sObject with the cleaned one
+                //     strippedRecords.set(strippedRecords.indexOf(devObj), cleanObj);
+                // }
 
             }
 
             // Stripped records - these are safe to insert
-            //List<SObject> strippedRecords =  securityStripping(cleanObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
-            //cleanObjs = null;
+            List<SObject> strippedRecords =  securityStripping(cleanObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
+            cleanObjs = null;
             
             Database.SaveResult [] results = null;
             try {
@@ -1116,7 +1121,8 @@ global class SFDCAccessController {
                 throw new AccessControlDmlException('null or empty parameter');
             
             // Keep this check for now as stripInaccessible isn't correctly enforcing create object permissions
-            Schema.DescribeSObjectResult d = devObjs.getSObjectType().getDescribe();
+            Schema.SObjectType sObjectType = devObjs.getSObjectType();
+            Schema.DescribeSObjectResult d = sObjectType.getDescribe();
             if (d.isCreateable() == false) 
                 throw new SFDCAccessControlException('Access Violation', 
                                                         SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
@@ -1124,8 +1130,13 @@ global class SFDCAccessController {
                                                         d.getName(),
                                                         null);
 
+            // One potential optimization is to use the security stripping early to create the safe sObject List
+            // Then we don't need to create and populate the new list.
+            // However, that doesn't allow for fieldsToSet to exclude the problem fields...
+            // Stripped records - these are safe to insert
+            //List<SObject> strippedRecords = securityStripping(devObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, false);
+
             sObject [] cleanObjs = null;
-            Schema.SObjectType sObjectType = devObjs.getSObjectType();
             if(sObjectType != null) {
                 // Homogeneous list
                 // Apex Cast sObject list dynamically to a specific sObject Type https://salesforce.stackexchange.com/a/88385/102
@@ -1146,6 +1157,10 @@ global class SFDCAccessController {
             for (sObject devObj : devObjs) {
                 sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, null, SFDCAccessControlException.ExceptionReason.NO_CREATE);
                 cleanObjs.add(cleanObj);
+                // if(cleanObj !== devObj) {
+                //     // Fields have been removed. Replace the stripped sObject with the cleaned one
+                //     strippedRecords.set(strippedRecords.indexOf(devObj), cleanObj);
+                // }
             }
 
             // Stripped records - these are safe to insert
@@ -1156,6 +1171,7 @@ global class SFDCAccessController {
                 // call dbInsert() to enforce sharing rules if required
                 results = dbInsert(strippedRecords);
             } catch (Exception e) {
+                // Note, source exception is currently lost.
                 throw new AccessControlDmlException('Failed to insert objects');
             }
             
@@ -1195,7 +1211,7 @@ global class SFDCAccessController {
             cleanObjToGivenFields(devObj, fieldsToUpdate, cleanObj, SFDCAccessControlException.ExceptionReason.NO_UPDATE);
             
             // Stripped record - this is safe to update
-            SObject strippedRecord =  securityStripping(cleanObj, AccessType.UPDATABLE, SFDCAccessControlException.ExceptionReason.NO_UPDATE, true);
+            SObject strippedRecord = securityStripping(cleanObj, AccessType.UPDATABLE, SFDCAccessControlException.ExceptionReason.NO_UPDATE, true);
 
             try {
                 // call dbUpdate() to enforce sharing rules if required
@@ -1241,6 +1257,7 @@ global class SFDCAccessController {
                 // call dbUpdate() to enforce sharing rules if required
                 dbUpdate(strippedRecord);
             } catch (Exception e) {
+                // Note, source exception is currently lost.
                 throw new AccessControlDmlException('Failed to update object');
             }
             return strippedRecord;
@@ -1342,7 +1359,7 @@ global class SFDCAccessController {
                                                         null);
 
             // for each object in the array set only updateable fields
-            for (sObject cleanObj: cleanObjs) {
+            for (sObject cleanObj : cleanObjs) {
                 if (devMap.containsKey(cleanObj.id) == false)
                     throw new SFDCAccessControlException('At least some record do not exist or are not shared with current user', 
                                                             SFDCAccessControlException.ExceptionType.NO_RECORD_FOUND, 
@@ -1357,13 +1374,14 @@ global class SFDCAccessController {
             }
 
             // Stripped records - these are safe to update
-            List<SObject> strippedRecords =  securityStripping(cleanObjs, AccessType.UPDATABLE, SFDCAccessControlException.ExceptionReason.NO_UPDATE, false);
+            List<SObject> strippedRecords = securityStripping(cleanObjs, AccessType.UPDATABLE, SFDCAccessControlException.ExceptionReason.NO_UPDATE, false);
             
-            Database.SaveResult [] results = null;
+            Database.SaveResult[] results = null;
             try {
                 // call dbUpdate() to enforce sharing rules if required
                 results = dbUpdate(strippedRecords);
             } catch (Exception e) {
+                // Note, source exception is currently lost.
                 throw new AccessControlDmlException('Failed to update objects');
             }
             
@@ -1430,10 +1448,13 @@ global class SFDCAccessController {
 
         /*
          * Populate the cleanObj with only the fields defined in fieldsToSet from devObj. Create an empty cleanObj if required
+         * devObj - the source sObject
+         * fieldsToSet - the API names for the fields to set.
+         * cleanObj - OPTIONAL - an empty sObject of the correct type that the fields can be populated into
+         * reason - If there is an SObjectException with setting the requested fields, this is the reason to include.
          */
         private sObject cleanObjToGivenFields(sObject devObj, List<string> fieldsToSet, sObject cleanObj, SFDCAccessControlException.ExceptionReason reason) {
             
-
             Map<String, Object> fieldsMap = devObj.getPopulatedFieldsAsMap();
             if(new Set<string>(fieldsToSet).containsAll(fieldsMap.keySet())) {
                 // The fieldsToSet are an exact match or a superset for the fields populated on the sObject.
@@ -1492,6 +1513,25 @@ global class SFDCAccessController {
          * Populate the cleanObj with only the fields defined in fieldsToSet from devObj. Create an empty cleanObj if required (insert)
          */
         private sObject cleanObjToGivenFields(sObject devObj, List<Schema.SObjectField> fieldsToSet, sObject cleanObj, SFDCAccessControlException.ExceptionReason reason) {
+
+            Map<String, Object> fieldsMap = devObj.getPopulatedFieldsAsMap();
+            if(fieldsToSet.size() >= fieldsMap.size()) {
+                Set<string> fieldsToSetAsStrings = new Set<string>();
+                for(Schema.SObjectField sof : fieldsToSet)  {
+                    fieldsToSetAsStrings.add(sof.getDescribe().getName());
+                }
+                if(fieldsToSetAsStrings.containsAll(fieldsMap.keySet())) {
+                    // The fieldsToSet are an exact match or a superset for the fields populated on the sObject.
+                    
+                    // Just clone it to avoid copying each field individually.
+                    //cleanObj = devObj.clone(true, true, false, true);
+                    //return cleanObj;
+                    
+                    // Just use the source sObject. It doesn't have any unrequested fields set.
+                    return devObj;
+                }
+            }
+
             if(cleanObj == null) {
                 // start from a fresh sObject of same type and only set fields requested
                 cleanObj = devObj.getSObjectType().newSObject();
@@ -1573,7 +1613,7 @@ global class SFDCAccessController {
                 }
             }
 
-            // Stripped records - these are safe to insert/create
+            // Stripped records - these are safe to insert/create/update
             List<SObject> afterRecords = decision.getRecords();
             return afterRecords;
         }
