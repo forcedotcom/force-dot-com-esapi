@@ -1516,6 +1516,7 @@ global class SFDCAccessController {
 
             Map<String, Object> fieldsMap = devObj.getPopulatedFieldsAsMap();
             if(fieldsToSet.size() >= fieldsMap.size()) {
+                // TODO: Consider passing fieldsToSetAsStrings in as a param so it doesn't need to be recreated for each sObject.
                 Set<string> fieldsToSetAsStrings = new Set<string>();
                 for(Schema.SObjectField sof : fieldsToSet)  {
                     fieldsToSetAsStrings.add(sof.getDescribe().getName());
