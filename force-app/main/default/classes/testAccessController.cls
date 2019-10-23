@@ -377,20 +377,37 @@ private class testAccessController {
 			// By excluding the DoNotCall field from this list it should avoid errors around not having access to the field.
 			List<string> contactFieldsToCheck = new List<String>{'LastName', 'Description'};
 
+			SFDCAccessControlResults.InsertResults collectionInsertResults = null;
+			Contact insertedSingleContact = null;
 			if(asSObjectField) {
 				List<Schema.SObjectField> contactSObjectFieldsToCheck = schemaSObjectFields(Schema.Contact.getSobjectType(), contactFieldsToCheck);
 
 				if(asCollection) {
-					ESAPI.accessController().insertAsUser(new List<Contact>{c}, contactSObjectFieldsToCheck);
+					collectionInsertResults = ESAPI.accessController().insertAsUser(new List<Contact>{c}, contactSObjectFieldsToCheck);
 				} else {
-					ESAPI.accessController().insertAsUser(c, contactSObjectFieldsToCheck);
+					insertedSingleContact = (Contact)ESAPI.accessController().insertAsUser(c, contactSObjectFieldsToCheck);
 				}
 			} else {
 				if(asCollection) {
-					ESAPI.accessController().insertAsUser(new List<Contact>{c}, contactFieldsToCheck );
+					collectionInsertResults = ESAPI.accessController().insertAsUser(new List<Contact>{c}, contactFieldsToCheck );
 				} else {
-					ESAPI.accessController().insertAsUser(c, contactFieldsToCheck);
+					insertedSingleContact = (Contact)ESAPI.accessController().insertAsUser(c, contactFieldsToCheck);
 				}
+			}
+
+			if(asCollection) {
+				System.assertNotEquals(null, collectionInsertResults, 'SFDCAccessControlResults.InsertResults expected');
+				System.assert(collectionInsertResults.wasSuccessful());
+				
+				Database.SaveResult[] results = collectionInsertResults.getResults();
+				System.assertEquals(1, results.size());
+				
+				sObject[] insertedObjects = collectionInsertResults.getInsertedObjects();
+				System.assertEquals(1, insertedObjects.size(), 'insertedObjects.size() == 1');
+				System.assertEquals(insertedObjects[0].Id, results[0].getId(), 'insertedObjects[0].Id == results[0].getId()');
+			} else {
+				System.assertNotEquals(null, insertedSingleContact);
+				System.assertNotEquals(null, insertedSingleContact.Id);
 			}
 
 		}
