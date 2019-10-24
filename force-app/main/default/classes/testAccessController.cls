@@ -204,6 +204,8 @@ private class testAccessController {
 
 		System.runAs(u) {
 			try {
+				System.assert(!SObjectType.Contact.createable, 'Not expecting to be able to insert Contacts');
+				
 				Contact c = new Contact();
 				c.LastName = 'ESAPI Test4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3';
 				
@@ -258,8 +260,6 @@ private class testAccessController {
 	static void runasProfileNoInsertSObjectsField_asSObjectField() {
 		runasProfileNoInsertSObjectField_Internal(true, true);
 	}
-
-	
 
 	// No access to field on sObject create
 	static void runasProfileNoInsertSObjectField_Internal(boolean asCollection, boolean asSObjectField) {
@@ -324,6 +324,92 @@ private class testAccessController {
 				}
 				
 			}
+		}
+	}
+
+	@isTest
+	static void runasProfileNoInsertSObjectFieldExcluded() {
+		runasProfileNoInsertSObjectFieldExcluded_Internal(false, false);
+	}
+
+	@isTest
+	static void runasProfileNoInsertSObjectFieldsExcluded() {
+		runasProfileNoInsertSObjectFieldExcluded_Internal(true, false);
+	}
+
+	@isTest
+	static void runasProfileNoInsertSObjectFieldExcluded_asSObjectField() {
+		runasProfileNoInsertSObjectFieldExcluded_Internal(false, true);
+	}
+
+	@isTest
+	static void runasProfileNoInsertSObjectFieldsExcluded_asSObjectField() {
+		runasProfileNoInsertSObjectFieldExcluded_Internal(true, true);
+	}
+
+	// No access to field on sObject create - except the field with no access isn't included in the fieldsToSet
+	static void runasProfileNoInsertSObjectFieldExcluded_Internal(boolean asCollection, boolean asSObjectField) {
+
+		FieldPermissions doNoCallFieldPermission = new FieldPermissions(SobjectType ='Contact',
+																Field = 'Contact.DoNotCall',
+																PermissionsRead = true,
+																PermissionsEdit = false
+															);	
+
+		boolean createReadWriteFieldPermissions = true;
+		User u = testReadOnlyProfileUser(true, contactObjectCreateEditReadPermission, createReadWriteFieldPermissions, new FieldPermissions[]{doNoCallFieldPermission} );
+
+		System.runAs(u) {
+			
+			Contact c = new Contact();
+			c.LastName = 'ESAPI Test4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3';
+			c.DoNotCall = true;
+			c.Description = 'Desc';
+
+			System.assert(SObjectType.Contact.createable);
+			System.assert(SObjectType.Contact.fields.DoNotCall.isAccessible(), 'The Contact.DoNotCall field should be Accessible.');
+			System.assert(!SObjectType.Contact.fields.DoNotCall.isCreateable(), 'The Contact.DoNotCall field should not be Createable. Just Readable');
+			System.assert(SObjectType.Contact.fields.Description.isCreateable());
+			
+			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+			ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+
+			// By excluding the DoNotCall field from this list it should avoid errors around not having access to the field.
+			List<string> contactFieldsToCheck = new List<String>{'LastName', 'Description'};
+
+			SFDCAccessControlResults.InsertResults collectionInsertResults = null;
+			Contact insertedSingleContact = null;
+			if(asSObjectField) {
+				List<Schema.SObjectField> contactSObjectFieldsToCheck = schemaSObjectFields(Schema.Contact.getSobjectType(), contactFieldsToCheck);
+
+				if(asCollection) {
+					collectionInsertResults = ESAPI.accessController().insertAsUser(new List<Contact>{c}, contactSObjectFieldsToCheck);
+				} else {
+					insertedSingleContact = (Contact)ESAPI.accessController().insertAsUser(c, contactSObjectFieldsToCheck);
+				}
+			} else {
+				if(asCollection) {
+					collectionInsertResults = ESAPI.accessController().insertAsUser(new List<Contact>{c}, contactFieldsToCheck );
+				} else {
+					insertedSingleContact = (Contact)ESAPI.accessController().insertAsUser(c, contactFieldsToCheck);
+				}
+			}
+
+			if(asCollection) {
+				System.assertNotEquals(null, collectionInsertResults, 'SFDCAccessControlResults.InsertResults expected');
+				System.assert(collectionInsertResults.wasSuccessful());
+				
+				Database.SaveResult[] results = collectionInsertResults.getResults();
+				System.assertEquals(1, results.size());
+				
+				sObject[] insertedObjects = collectionInsertResults.getInsertedObjects();
+				System.assertEquals(1, insertedObjects.size(), 'insertedObjects.size() == 1');
+				System.assertEquals(insertedObjects[0].Id, results[0].getId(), 'insertedObjects[0].Id == results[0].getId()');
+			} else {
+				System.assertNotEquals(null, insertedSingleContact);
+				System.assertNotEquals(null, insertedSingleContact.Id);
+			}
+
 		}
 	}
 
