@@ -991,11 +991,15 @@ global class SFDCAccessController {
                                                         d.getName(),
                                                         null);
 
-            // start from a fresh sObject of same type and only set the requested fields
+            // Ideally securityStripping would occur before cleanObjToGivenFields.
+            // However, securityStripping implicitly maintains the ID field as being set. Even if it isn't included in fieldsToSet
+
+            // Reduce the strippedRecord to only the fields requested.
             sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, null, SFDCAccessControlException.ExceptionReason.NO_CREATE);
 
             // Stripped records - these are safe to insert
-            SObject strippedRecord =  securityStripping(cleanObj, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
+            SObject strippedRecord = securityStripping(cleanObj, fieldsToSet, AccessType.CREATABLE, true);
+            System.assert(strippedRecord !== devObj);
             
             try {
                 // call dbInsert() to enforce sharing rules if required
@@ -1021,22 +1025,26 @@ global class SFDCAccessController {
                                                         SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
                                                         SFDCAccessControlException.ExceptionReason.NO_CREATE,
                                                         d.getName(),
-                                                        null);
+                                                        null);           
 
-            // start from a fresh sObject of same type and only set the requested fields
-            sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, null, SFDCAccessControlException.ExceptionReason.NO_CREATE);
+            // Passing fieldsToSetAsStrings in as a param so it doesn't need to be recreated for each sObject.
+            Set<string> fieldsToSetAsStrings = sObjectFieldsAsSetStrings(fieldsToSet);
+
+            // Reduce the strippedRecord to only the fields requested.
+            sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, fieldsToSetAsStrings, null, SFDCAccessControlException.ExceptionReason.NO_CREATE);
 
             // Stripped records - these are safe to insert
-            SObject strippedRecord =  securityStripping(cleanObj, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, false);
+            SObject strippedRecord = securityStripping(cleanObj, fieldsToSet, AccessType.CREATABLE, false);
+            System.assert(strippedRecord !== devObj);
             
             try {
                 // call dbInsert() to enforce sharing rules if required
-                dbInsert(cleanObj);
+                dbInsert(strippedRecord);
             } catch (Exception e) {
                 // Note, source exception is currently lost.
                 throw new AccessControlDmlException('Failed to insert object');
             }
-            return cleanObj;
+            return strippedRecord;
         }
 
         /* Check to see if the user can create these objects.
@@ -1068,7 +1076,15 @@ global class SFDCAccessController {
             // However, that doesn't allow for fieldsToSet to exclude the problem fields...
             // Pass fieldsToSet into securityStripping? Then they can be ignored as requird!
             // Stripped records - these are safe to insert
-            //List<SObject> strippedRecords =  securityStripping(devObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
+            // List<SObject> strippedRecords = securityStripping(devObjs, fieldsToSet, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
+            // // for each object in the array set only requested fields
+            // for (sObject devObj : strippedRecords) {
+            //     sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, devObj, SFDCAccessControlException.ExceptionReason.NO_CREATE);
+            //     if(cleanObj !== devObj) {
+            //         // Fields have been removed. Replace the stripped sObject with the cleaned one
+            //         strippedRecords.set(strippedRecords.indexOf(devObj), cleanObj);
+            //     }
+            // }
 
             sObject [] cleanObjs = null;
             if(sObjectType != null) {
@@ -1091,15 +1107,10 @@ global class SFDCAccessController {
             for (sObject devObj : devObjs) {
                 sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, null, SFDCAccessControlException.ExceptionReason.NO_CREATE);
                 cleanObjs.add(cleanObj);
-                // if(cleanObj !== devObj) {
-                //     // Fields have been removed. Replace the stripped sObject with the cleaned one
-                //     strippedRecords.set(strippedRecords.indexOf(devObj), cleanObj);
-                // }
-
             }
 
             // Stripped records - these are safe to insert
-            List<SObject> strippedRecords =  securityStripping(cleanObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, true);
+            List<SObject> strippedRecords = securityStripping(cleanObjs, fieldsToSet, AccessType.CREATABLE, true);
             cleanObjs = null;
             
             Database.SaveResult [] results = null;
@@ -1134,7 +1145,15 @@ global class SFDCAccessController {
             // Then we don't need to create and populate the new list.
             // However, that doesn't allow for fieldsToSet to exclude the problem fields...
             // Stripped records - these are safe to insert
-            //List<SObject> strippedRecords = securityStripping(devObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, false);
+            //List<SObject> strippedRecords = securityStripping(devObjs, fieldsToSet, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, false);
+            // for each object in the array set only requested fields
+            // for (sObject devObj : strippedRecords) {
+            //     sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, devObj, SFDCAccessControlException.ExceptionReason.NO_CREATE);
+            //     if(cleanObj !== devObj) {
+            //         // Fields have been removed. Replace the stripped sObject with the cleaned one
+            //         strippedRecords.set(strippedRecords.indexOf(devObj), cleanObj);
+            //     }
+            // }
 
             sObject [] cleanObjs = null;
             if(sObjectType != null) {
@@ -1153,18 +1172,17 @@ global class SFDCAccessController {
                 cleanObjs.clear();
             }
             
+            // Passing fieldsToSetAsStrings in as a param so it doesn't need to be recreated for each sObject.
+            Set<string> fieldsToSetAsStrings = sObjectFieldsAsSetStrings(fieldsToSet);
+
             // for each object in the array set only requested fields
             for (sObject devObj : devObjs) {
-                sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, null, SFDCAccessControlException.ExceptionReason.NO_CREATE);
+                sObject cleanObj = cleanObjToGivenFields(devObj, fieldsToSet, fieldsToSetAsStrings, null, SFDCAccessControlException.ExceptionReason.NO_CREATE);
                 cleanObjs.add(cleanObj);
-                // if(cleanObj !== devObj) {
-                //     // Fields have been removed. Replace the stripped sObject with the cleaned one
-                //     strippedRecords.set(strippedRecords.indexOf(devObj), cleanObj);
-                // }
             }
 
             // Stripped records - these are safe to insert
-            List<SObject> strippedRecords =  securityStripping(cleanObjs, AccessType.CREATABLE, SFDCAccessControlException.ExceptionReason.NO_CREATE, false);
+            List<SObject> strippedRecords =  securityStripping(cleanObjs, fieldsToSet, AccessType.CREATABLE, false);
             
             Database.SaveResult [] results = null;
             try {
@@ -1211,7 +1229,7 @@ global class SFDCAccessController {
             cleanObjToGivenFields(devObj, fieldsToUpdate, cleanObj, SFDCAccessControlException.ExceptionReason.NO_UPDATE);
             
             // Stripped record - this is safe to update
-            SObject strippedRecord = securityStripping(cleanObj, AccessType.UPDATABLE, SFDCAccessControlException.ExceptionReason.NO_UPDATE, true);
+            SObject strippedRecord = securityStripping(cleanObj, fieldsToUpdate, AccessType.UPDATABLE, true);
 
             try {
                 // call dbUpdate() to enforce sharing rules if required
@@ -1247,11 +1265,14 @@ global class SFDCAccessController {
                                                         d.getName(),
                                                         null);
 
+            // Passing fieldsToSetAsStrings in as a param so it doesn't need to be recreated for each sObject.
+            Set<string> fieldsToSetAsStrings = sObjectFieldsAsSetStrings(fieldsToUpdate);
+
             // set all fields that were requested
-            cleanObjToGivenFields(devObj, fieldsToUpdate, cleanObj, SFDCAccessControlException.ExceptionReason.NO_UPDATE);
+            cleanObjToGivenFields(devObj, fieldsToUpdate, fieldsToSetAsStrings, cleanObj, SFDCAccessControlException.ExceptionReason.NO_UPDATE);
 
             // Stripped record - this is safe to update
-            SObject strippedRecord =  securityStripping(cleanObj, AccessType.UPDATABLE, SFDCAccessControlException.ExceptionReason.NO_UPDATE, false);
+            SObject strippedRecord = securityStripping(cleanObj, fieldsToUpdate, AccessType.UPDATABLE, false);
             
             try {
                 // call dbUpdate() to enforce sharing rules if required
@@ -1281,9 +1302,17 @@ global class SFDCAccessController {
             // because, the user should be able to convert into map just using map.putAll(sobject_array). 
             // We can't do that because apex does not allow you to call putAll with a generic sObject value.
             // We also can't call put in a loop to add all objects, because we can't create a map with a generic
-            // sobject value (in apex v16)                  
-            
+            // sobject value (in apex v16)
+
             Schema.DescribeSObjectResult d = devMap.getSObjectType().getDescribe();
+            
+            // TODO: This is possible now in v47.0. New methods could be created that accept a List<sObject> and do the following to create the Map.
+            // Type t= Type.forName('Map<ID,' + d.getName() + '>');
+            // Map<ID, sObject> sobjectMap = (Map<ID, sObject>)t.newInstance();
+            // sobjectMap.putAll(devMap.values());
+            // devMap = sobjectMap;
+            
+            // Keep this check for now as stripInaccessible isn't correctly enforcing update object permissions - Winter '20
             if (d.isUpdateable() == false) 
                 throw new SFDCAccessControlException('Access Violation', 
                                                         SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
@@ -1300,7 +1329,7 @@ global class SFDCAccessController {
                                                         d.getName(),
                                                         null);
 
-            // for each object in the array set only updateable fields
+            // for each object in the array set only requested
             for (sObject cleanObj : cleanObjs) {
                 if (devMap.containsKey(cleanObj.id) == false)
                     throw new SFDCAccessControlException('At least some record do not exist or are not shared with current user', 
@@ -1315,7 +1344,7 @@ global class SFDCAccessController {
             }
 
             // Stripped records - these are safe to update
-            List<SObject> strippedRecords =  securityStripping(cleanObjs, AccessType.UPDATABLE, SFDCAccessControlException.ExceptionReason.NO_UPDATE, true);
+            List<SObject> strippedRecords = securityStripping(cleanObjs, fieldsToUpdate, AccessType.UPDATABLE, true);
 
             Database.SaveResult [] results = null;
             try {
@@ -1341,6 +1370,7 @@ global class SFDCAccessController {
             // We also can't call put in a loop to add all objects, because we can't create a map with a generic
             // sobject value (in apex v16)                  
             
+            // Keep this check for now as stripInaccessible isn't correctly enforcing update object permissions - Winter '20
             Schema.DescribeSObjectResult d = devMap.getSObjectType().getDescribe();
             if (d.isUpdateable() == false) 
                 throw new SFDCAccessControlException('Access Violation', 
@@ -1358,7 +1388,10 @@ global class SFDCAccessController {
                                                         d.getName(),
                                                         null);
 
-            // for each object in the array set only updateable fields
+            // Passing fieldsToSetAsStrings in as a param so it doesn't need to be recreated for each sObject.
+            Set<string> fieldsToSetAsStrings = sObjectFieldsAsSetStrings(fieldsToUpdate);
+
+            // for each object in the array set only requested fields
             for (sObject cleanObj : cleanObjs) {
                 if (devMap.containsKey(cleanObj.id) == false)
                     throw new SFDCAccessControlException('At least some record do not exist or are not shared with current user', 
@@ -1370,11 +1403,11 @@ global class SFDCAccessController {
                 sObject devObj = devMap.get(cleanObj.id);
 
                 // set all fields that were requested
-                cleanObjToGivenFields(devObj, fieldsToUpdate, cleanObj, SFDCAccessControlException.ExceptionReason.NO_UPDATE);
+                cleanObjToGivenFields(devObj, fieldsToUpdate, fieldsToSetAsStrings, cleanObj, SFDCAccessControlException.ExceptionReason.NO_UPDATE);
             }
 
             // Stripped records - these are safe to update
-            List<SObject> strippedRecords = securityStripping(cleanObjs, AccessType.UPDATABLE, SFDCAccessControlException.ExceptionReason.NO_UPDATE, false);
+            List<SObject> strippedRecords = securityStripping(cleanObjs, fieldsToUpdate, AccessType.UPDATABLE, false);
             
             Database.SaveResult[] results = null;
             try {
@@ -1451,17 +1484,13 @@ global class SFDCAccessController {
          * devObj - the source sObject
          * fieldsToSet - the API names for the fields to set.
          * cleanObj - OPTIONAL - an empty sObject of the correct type that the fields can be populated into
-         * reason - If there is an SObjectException with setting the requested fields, this is the reason to include.
+         * reason - If there is an SObjectException when setting the requested fields, this is the reason to include in the resulting exception.
          */
         private sObject cleanObjToGivenFields(sObject devObj, List<string> fieldsToSet, sObject cleanObj, SFDCAccessControlException.ExceptionReason reason) {
             
             Map<String, Object> fieldsMap = devObj.getPopulatedFieldsAsMap();
             if(new Set<string>(fieldsToSet).containsAll(fieldsMap.keySet())) {
                 // The fieldsToSet are an exact match or a superset for the fields populated on the sObject.
-                
-                // Just clone it to avoid copying each field individually.
-                //cleanObj = devObj.clone(true, true, false, true);
-                //return cleanObj;
                 
                 // Just use the source sObject. It doesn't have any unrequested fields set.
                 return devObj;
@@ -1494,40 +1523,23 @@ global class SFDCAccessController {
                 }
             }
             return cleanObj;
-
-            // // Create a copy of the input sObject so any additional unrequested fields can be cleared out.
-            // sObject cleanObj = devObj.clone(true, true, false, true);
-
-            // // Use a quirk of the sObject field map to clear out fields that shouldn't be set.
-            // Map<String, Object> fieldsToValue = cleanObj.getPopulatedFieldsAsMap();
-            // Set<string> fieldsOnSObject = fieldsToValue.keySet();
-            // for (String fieldName : fieldsOnSObject){
-            //     if(!fieldsToSet.contains(fieldName)) {
-            //         // Remove the field value from the sObject as we don't want to set it.
-            //         fieldsOnSObject.remove(fieldName);
-            //     }
-            // }
         }
 
         /*
          * Populate the cleanObj with only the fields defined in fieldsToSet from devObj. Create an empty cleanObj if required (insert)
+         * devObj - the source sObject
+         * fieldsToSet - the fields to set.
+         * fieldsToSetAsStrings - The API names for the fields to set. Corresponds to fieldsToSet, except as Set<string>
+         * cleanObj - OPTIONAL - an empty sObject of the correct type that the fields can be populated into
+         * reason - If there is an SObjectException when setting the requested fields, this is the reason to include in the resulting exception.
          */
-        private sObject cleanObjToGivenFields(sObject devObj, List<Schema.SObjectField> fieldsToSet, sObject cleanObj, SFDCAccessControlException.ExceptionReason reason) {
+        private sObject cleanObjToGivenFields(sObject devObj, List<Schema.SObjectField> fieldsToSet, Set<string> fieldsToSetAsStrings, sObject cleanObj, SFDCAccessControlException.ExceptionReason reason) {
 
             Map<String, Object> fieldsMap = devObj.getPopulatedFieldsAsMap();
             if(fieldsToSet.size() >= fieldsMap.size()) {
-                // TODO: Consider passing fieldsToSetAsStrings in as a param so it doesn't need to be recreated for each sObject.
-                Set<string> fieldsToSetAsStrings = new Set<string>();
-                for(Schema.SObjectField sof : fieldsToSet)  {
-                    fieldsToSetAsStrings.add(sof.getDescribe().getName());
-                }
                 if(fieldsToSetAsStrings.containsAll(fieldsMap.keySet())) {
                     // The fieldsToSet are an exact match or a superset for the fields populated on the sObject.
-                    
-                    // Just clone it to avoid copying each field individually.
-                    //cleanObj = devObj.clone(true, true, false, true);
-                    //return cleanObj;
-                    
+
                     // Just use the source sObject. It doesn't have any unrequested fields set.
                     return devObj;
                 }
@@ -1563,16 +1575,33 @@ global class SFDCAccessController {
         /*
          * Check for the applicable CRUD and FLS for the given sObject and access type.
          */
-        private SObject securityStripping(SObject sourceRecord, AccessType accessType, SFDCAccessControlException.ExceptionReason reason, boolean lowerCaseFieldName) {
+        private SObject securityStripping(SObject sourceRecord, List<string> fieldsToSet, AccessType accessType, boolean lowerCaseFieldName) {
             List<SObject> sourceRecords = new List<SObject>{sourceRecord};
-            List<SObject> afterRecords = securityStripping(sourceRecords, accessType, reason, lowerCaseFieldName);
+            List<SObject> afterRecords = securityStripping(sourceRecords, fieldsToSet, accessType, lowerCaseFieldName);
+            return afterRecords[0];
+        }
+
+        /*
+         * Check for the applicable CRUD and FLS for the given sObject and access type.
+         */
+        private SObject securityStripping(SObject sourceRecord, List<Schema.SObjectField> fieldsToSet, AccessType accessType, boolean lowerCaseFieldName) {
+            List<SObject> sourceRecords = new List<SObject>{sourceRecord};
+            List<SObject> afterRecords = securityStripping(sourceRecords, fieldsToSet, accessType, lowerCaseFieldName);
             return afterRecords[0];
         }
 
         /*
          * Check for the applicable CRUD and FLS for the given sObjects and access type.
          */
-        private List<SObject> securityStripping(List<SObject> sourceRecords, AccessType accessType, SFDCAccessControlException.ExceptionReason reason, boolean lowerCaseFieldName) {
+        private List<SObject> securityStripping(List<SObject> sourceRecords, List<Schema.SObjectField> fieldsToSet, AccessType accessType, boolean lowerCaseFieldName) {
+            List<string> fieldsToSetAsStrings = new List<string>(sObjectFieldsAsSetStrings(fieldsToSet));
+            return securityStripping(sourceRecords, fieldsToSetAsStrings, accessType, lowerCaseFieldName);
+        }
+
+        /*
+         * Check for the applicable CRUD and FLS for the given sObjects and access type.
+         */
+        private List<SObject> securityStripping(List<SObject> sourceRecords, List<string> fieldsToSet, AccessType accessType, boolean lowerCaseFieldName) {
 
             System.SObjectAccessDecision decision = null;
             try {
@@ -1586,9 +1615,10 @@ global class SFDCAccessController {
                 // E.g. Message:
                 //     No access to entity: Contact
                 string sObjectName = ex.getMessage().substring(ex.getMessage().indexOf(':'));
+                // Alternative to parsing the exception message is to use sourceRecords.getSObjectType()
                 throw new SFDCAccessControlException('Access Violation',
                                                         SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION,
-                                                        reason,
+                                                        exceptionReasonFromAccessType(accessType),
                                                         sObjectName,
                                                         null);
             }
@@ -1601,13 +1631,21 @@ global class SFDCAccessController {
                     for(string firstSObjectField : removedFields.get(firstSObjectType)) {
                         // if operation mode == ALL_OR_NONE - throw exception because user does not have permission to set fieldName
 
+                        // TODO: Check case sensitivity on the contains method call
+                        if(!fieldsToSet.contains(firstSObjectField)) {
+                            // The field that has been removed isn't one of the required fields to set.
+                            // No need to error, just ignore it.
+                            // This occurs when securityStripping is called before cleanObjToGivenFields
+                            continue;
+                        }
+
                         // If the fields are defined as strings the exception expects the field name lower case
                         // For a SObjectField, unchanged
                         string fieldName = (lowerCaseFieldName) ? firstSObjectField.toLowerCase() : firstSObjectField;
 
                         throw new SFDCAccessControlException('Access Violation', 
                                             SFDCAccessControlException.ExceptionType.FIELD_ACCESS_VIOLATION, 
-                                            reason,
+                                            exceptionReasonFromAccessType(accessType),
                                             firstSObjectType,
                                             fieldName);
                     }
@@ -1615,8 +1653,29 @@ global class SFDCAccessController {
             }
 
             // Stripped records - these are safe to insert/create/update
+            // They may still need to be checked so that only the requested fields are set.
             List<SObject> afterRecords = decision.getRecords();
             return afterRecords;
+        }
+
+        private SFDCAccessControlException.ExceptionReason exceptionReasonFromAccessType(AccessType accessType) {
+            switch on (accessType) {
+                when CREATABLE {
+                    return SFDCAccessControlException.ExceptionReason.NO_CREATE;
+                }
+                when UPDATABLE {
+                    return SFDCAccessControlException.ExceptionReason.NO_UPDATE;
+                }
+            }
+            throw new AccessControlDmlException('Unsupported AccessType');
+        }
+
+        private Set<string> sObjectFieldsAsSetStrings(List<Schema.SObjectField> fieldsToSet) {
+            Set<string> fieldsToSetAsStrings = new Set<string>();
+            for(Schema.SObjectField sof : fieldsToSet) {
+                fieldsToSetAsStrings.add(sof.getDescribe().getName());
+            }
+            return fieldsToSetAsStrings;
         }
     
         /* Gets a clean object from db.
@@ -1659,17 +1718,6 @@ global class SFDCAccessController {
         private SObject [] getObjects(sObject [] objArray) {
             
             String Soql = 'SELECT Id FROM ' + objArray.getSObjectType().getDescribe().getName() + ' WHERE ';
-            //Boolean emptyIds = true;
-            
-            // add all Ids
-            // for (SObject obj : objArray) {
-            //     if (emptyIds == false)
-            //         Soql += ' or ';
-            //     else
-            //         emptyIds = false;
-                
-            //     Soql += 'ID=\'' + String.escapeSingleQuotes(obj.Id) + '\'';
-            // }
 
             // It isn't possible to pass the ID collection as a SOQL binding variable into dbQuery
             List<Id> objIds = new List<Id>(new Map<Id, sobject>(objArray).keySet());
