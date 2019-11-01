@@ -76,6 +76,7 @@ private class testAccessController {
 																	PermissionsRead = true
 																);
 
+	// TODO: This method is largely for coverage and lacks assertions. Expand out into more meaningful test methods.
     static testMethod void testAccessControl() {
         Contact c = new Contact();
         c.LastName = 'ESAPI Test Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3'; // We add this long random to make sure we will not conflict with any real last name 
@@ -86,7 +87,11 @@ private class testAccessController {
         	ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
            	
         	c = (Contact)ESAPI.accessController().insertAsUser(c, new List<String>{'LastName'});
+			Id firstInsertId = c.Id;
+			// Note, this excludes the ID field from the fields to insert. Hence it doesn't become an update.
         	c = (Contact)ESAPI.accessController().insertAsUser(c, new List<Schema.SObjectField>{Contact.LastName});
+			Id secondInsertId = c.Id;
+			System.assertNotEquals(firstInsertId, secondInsertId, 'Each insert operations should have resulted in a different Contact');
         	
 	    	ESAPI.accessController().getCreatableFields(c);
 	    	ESAPI.accessController().getUpdateableFields(c);
@@ -204,6 +209,8 @@ private class testAccessController {
 
 		System.runAs(u) {
 			try {
+				System.assert(!SObjectType.Contact.createable, 'Not expecting to be able to insert Contacts');
+				
 				Contact c = new Contact();
 				c.LastName = 'ESAPI Test4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3';
 				
@@ -258,8 +265,6 @@ private class testAccessController {
 	static void runasProfileNoInsertSObjectsField_asSObjectField() {
 		runasProfileNoInsertSObjectField_Internal(true, true);
 	}
-
-	
 
 	// No access to field on sObject create
 	static void runasProfileNoInsertSObjectField_Internal(boolean asCollection, boolean asSObjectField) {
@@ -324,6 +329,193 @@ private class testAccessController {
 				}
 				
 			}
+		}
+	}
+
+	@isTest
+	static void runasProfileNoInsertSObjectFieldExcluded() {
+		runasProfileNoInsertSObjectFieldExcluded_Internal(false, false);
+	}
+
+	@isTest
+	static void runasProfileNoInsertSObjectFieldsExcluded() {
+		runasProfileNoInsertSObjectFieldExcluded_Internal(true, false);
+	}
+
+	@isTest
+	static void runasProfileNoInsertSObjectFieldExcluded_asSObjectField() {
+		runasProfileNoInsertSObjectFieldExcluded_Internal(false, true);
+	}
+
+	@isTest
+	static void runasProfileNoInsertSObjectFieldsExcluded_asSObjectField() {
+		runasProfileNoInsertSObjectFieldExcluded_Internal(true, true);
+	}
+
+	// No access to field on sObject create - except the field with no access isn't included in the fieldsToSet
+	static void runasProfileNoInsertSObjectFieldExcluded_Internal(boolean asCollection, boolean asSObjectField) {
+
+		FieldPermissions doNoCallFieldPermission = new FieldPermissions(SobjectType ='Contact',
+																Field = 'Contact.DoNotCall',
+																PermissionsRead = true,
+																PermissionsEdit = false
+															);	
+
+		boolean createReadWriteFieldPermissions = true;
+		User u = testReadOnlyProfileUser(true, contactObjectCreateEditReadPermission, createReadWriteFieldPermissions, new FieldPermissions[]{doNoCallFieldPermission} );
+
+		System.runAs(u) {
+			
+			Contact c = new Contact();
+			c.LastName = 'ESAPI Test4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3';
+			c.DoNotCall = true;
+			c.Description = 'Desc';
+
+			System.assert(SObjectType.Contact.createable);
+			System.assert(SObjectType.Contact.fields.DoNotCall.isAccessible(), 'The Contact.DoNotCall field should be Accessible.');
+			System.assert(!SObjectType.Contact.fields.DoNotCall.isCreateable(), 'The Contact.DoNotCall field should not be Createable. Just Readable');
+			System.assert(SObjectType.Contact.fields.Description.isCreateable());
+			
+			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+			ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+
+			// By excluding the DoNotCall field from this list it should avoid errors around not having access to the field.
+			List<string> contactFieldsToCheck = new List<String>{'LastName', 'Description'};
+
+			SFDCAccessControlResults.InsertResults collectionInsertResults = null;
+			Contact insertedSingleContact = null;
+			if(asSObjectField) {
+				List<Schema.SObjectField> contactSObjectFieldsToCheck = schemaSObjectFields(Schema.Contact.getSobjectType(), contactFieldsToCheck);
+
+				if(asCollection) {
+					collectionInsertResults = ESAPI.accessController().insertAsUser(new List<Contact>{c}, contactSObjectFieldsToCheck);
+				} else {
+					insertedSingleContact = (Contact)ESAPI.accessController().insertAsUser(c, contactSObjectFieldsToCheck);
+				}
+			} else {
+				if(asCollection) {
+					collectionInsertResults = ESAPI.accessController().insertAsUser(new List<Contact>{c}, contactFieldsToCheck );
+				} else {
+					insertedSingleContact = (Contact)ESAPI.accessController().insertAsUser(c, contactFieldsToCheck);
+				}
+			}
+
+			if(asCollection) {
+				System.assertNotEquals(null, collectionInsertResults, 'SFDCAccessControlResults.InsertResults expected');
+				System.assert(collectionInsertResults.wasSuccessful());
+				
+				Database.SaveResult[] results = collectionInsertResults.getResults();
+				System.assertEquals(1, results.size());
+				
+				sObject[] insertedObjects = collectionInsertResults.getInsertedObjects();
+				System.assertEquals(1, insertedObjects.size(), 'insertedObjects.size() == 1');
+				System.assertEquals(insertedObjects[0].Id, results[0].getId(), 'insertedObjects[0].Id == results[0].getId()');
+
+                System.assert(c !== insertedObjects[0], 'The inserted Contact should not be the same one that was passed in (in the heap)');
+			} else {
+				System.assertNotEquals(null, insertedSingleContact);
+				System.assertNotEquals(null, insertedSingleContact.Id);
+                System.assert(c !== insertedSingleContact, 'The inserted Contact should not be the same one that was passed in (in the heap)');
+
+                Map<String, Object> fieldsMap = insertedSingleContact.getPopulatedFieldsAsMap();
+                System.assert(!fieldsMap.containsKey('DoNotCall'), 'The DoNotCall field should not have been set');
+			}
+
+		}
+	}
+
+    @isTest
+	static void runasProfileInsertSObjectFieldExcluded() {
+		runasProfileInsertSObjectFieldExcluded_Internal(false, false);
+	}
+
+	@isTest
+	static void runasProfileInsertSObjectsFieldExcluded() {
+		runasProfileInsertSObjectFieldExcluded_Internal(true, false);
+	}
+
+	@isTest
+	static void runasProfileInsertSObjectFieldExcluded_asSObjectField() {
+		runasProfileInsertSObjectFieldExcluded_Internal(false, true);
+	}
+
+	@isTest
+	static void runasProfileInsertSObjectsFieldExcluded_asSObjectField() {
+		runasProfileInsertSObjectFieldExcluded_Internal(true, true);
+	}
+
+	// Field that the user has access to was set on the sObect but excluded from the fields to set collection
+	static void runasProfileInsertSObjectFieldExcluded_Internal(boolean asCollection, boolean asSObjectField) {
+
+		FieldPermissions doNoCallFieldPermission = new FieldPermissions(SobjectType ='Contact',
+																Field = 'Contact.DoNotCall',
+																PermissionsRead = true,
+																PermissionsEdit = true
+															);	
+
+		boolean createReadWriteFieldPermissions = true;
+		User u = testReadOnlyProfileUser(true, contactObjectCreateEditReadPermission, createReadWriteFieldPermissions, new FieldPermissions[]{doNoCallFieldPermission} );
+
+		System.runAs(u) {
+			
+			Contact c = new Contact();
+			c.LastName = 'ESAPI Test4 Spu8UY&thuCrUzAPa2ASTaC7rA$Ra3';
+			c.DoNotCall = true;
+			c.Description = 'Desc';
+
+			System.assert(SObjectType.Contact.createable);
+			System.assert(SObjectType.Contact.fields.DoNotCall.isAccessible(), 'The Contact.DoNotCall field should be Accessible.');
+			System.assert(SObjectType.Contact.fields.DoNotCall.isCreateable(), 'The Contact.DoNotCall field should be Createable.');
+			System.assert(SObjectType.Contact.fields.Description.isCreateable());
+			
+			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
+			ESAPI.accessController().setSharingMode(SFDCAccessController.SharingMode.WITH);
+
+			// By excluding the DoNotCall field from this list it should be excluded from the insert operation. Even though we have access to it.
+			List<string> contactFieldsToCheck = new List<String>{'LastName', 'Description'};
+
+			SFDCAccessControlResults.InsertResults collectionInsertResults = null;
+			Contact insertedSingleContact = null;
+			if(asSObjectField) {
+				List<Schema.SObjectField> contactSObjectFieldsToCheck = schemaSObjectFields(Schema.Contact.getSobjectType(), contactFieldsToCheck);
+
+				if(asCollection) {
+					collectionInsertResults = ESAPI.accessController().insertAsUser(new List<Contact>{c}, contactSObjectFieldsToCheck);
+				} else {
+					insertedSingleContact = (Contact)ESAPI.accessController().insertAsUser(c, contactSObjectFieldsToCheck);
+				}
+			} else {
+				if(asCollection) {
+					collectionInsertResults = ESAPI.accessController().insertAsUser(new List<Contact>{c}, contactFieldsToCheck );
+				} else {
+					insertedSingleContact = (Contact)ESAPI.accessController().insertAsUser(c, contactFieldsToCheck);
+				}
+			}
+
+			if(asCollection) {
+				System.assertNotEquals(null, collectionInsertResults, 'SFDCAccessControlResults.InsertResults expected');
+				System.assert(collectionInsertResults.wasSuccessful());
+				
+				Database.SaveResult[] results = collectionInsertResults.getResults();
+				System.assertEquals(1, results.size());
+				
+				sObject[] insertedObjects = collectionInsertResults.getInsertedObjects();
+				System.assertEquals(1, insertedObjects.size(), 'insertedObjects.size() == 1');
+				System.assertEquals(insertedObjects[0].Id, results[0].getId(), 'insertedObjects[0].Id == results[0].getId()');
+
+                System.assert(c !== insertedObjects[0], 'The inserted Contact should not be the same one that was passed in (in the heap)');
+
+                Map<String, Object> fieldsMap = insertedObjects[0].getPopulatedFieldsAsMap();
+                System.assert(!fieldsMap.containsKey('DoNotCall'), 'The DoNotCall field should not have been set');
+			} else {
+				System.assertNotEquals(null, insertedSingleContact);
+				System.assertNotEquals(null, insertedSingleContact.Id);
+                System.assert(c !== insertedSingleContact, 'The inserted Contact should not be the same one that was passed in (in the heap)');
+
+                Map<String, Object> fieldsMap = insertedSingleContact.getPopulatedFieldsAsMap();
+                System.assert(!fieldsMap.containsKey('DoNotCall'), 'The DoNotCall field should not have been set');
+			}
+
 		}
 	}
 
@@ -933,6 +1125,8 @@ private class testAccessController {
     	System.assert(tmp != null, 'insertAsUser returned null');
     	System.assert(tmp2 != null, 'select with LastName after insertAsUser returned null');
     	System.assert(tmp3 != null, 'select with tmp.id after insertAsUser returned null');
+
+		System.assert(tmp !== c1, 'The sObject returned by insertAsUser should not be the same sObject that was passed in (in the heap)');
         	
     	System.assert(tmp.id == tmp2.id, 'select with LastName after insertAsUser returned id which is not equal to id from returned object');
     	System.assert(tmp.id == tmp3.id, 'select with tmp.id after insertAsUser returned id which is not equal to id from returned object');
@@ -960,6 +1154,8 @@ private class testAccessController {
     	System.assert(tmp != null, 'insertAsUser returned null');
     	System.assert(tmp2 != null, 'select with LastName after insertAsUser returned null');
     	System.assert(tmp3 != null, 'select with tmp.id after insertAsUser returned null');
+
+        System.assert(tmp !== c1, 'The sObject returned by insertAsUser should not be the same sObject that was passed in (in the heap)');
         	
     	System.assert(tmp.id == tmp2.id, 'select with LastName after insertAsUser returned id which is not equal to id from returned object');
     	System.assert(tmp.id == tmp3.id, 'select with tmp.id after insertAsUser returned id which is not equal to id from returned object');
