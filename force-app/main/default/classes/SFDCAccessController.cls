@@ -981,15 +981,6 @@ global class SFDCAccessController {
         public SObject insertAsUser(SObject devObj, List<String> fieldsToSet) {
             if (devObj == null || fieldsToSet == null || fieldsToSet.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
-            
-            // Keep this check for now as stripInaccessible isn't correctly enforcing create object permissions
-            Schema.DescribeSObjectResult d = devObj.getSObjectType().getDescribe();
-            if (d.isCreateable() == false) 
-                throw new SFDCAccessControlException('Access Violation', 
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
-                                                        SFDCAccessControlException.ExceptionReason.NO_CREATE,
-                                                        d.getName(),
-                                                        null);
 
             // Have securityStripping occur before cleanObjToGivenFields so we only create a new sObject if required.
             // Note - securityStripping implicitly maintains the ID field as being set. Even if it isn't included in fieldsToSet
@@ -1012,15 +1003,6 @@ global class SFDCAccessController {
         public SObject insertAsUser(SObject devObj, List<Schema.SObjectField> fieldsToSet) {
             if (devObj == null || fieldsToSet == null || fieldsToSet.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
-            
-            // Keep this check for now as stripInaccessible isn't correctly enforcing create object permissions
-            Schema.DescribeSObjectResult d = devObj.getSObjectType().getDescribe();
-            if (d.isCreateable() == false) 
-                throw new SFDCAccessControlException('Access Violation', 
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
-                                                        SFDCAccessControlException.ExceptionReason.NO_CREATE,
-                                                        d.getName(),
-                                                        null);
 
             // Passing fieldsToSetAsStrings in as a param so it doesn't need to be recreated for each sObject.
             Set<string> fieldsToSetAsStrings = fieldsToStringSetMaintainCase(fieldsToSet);
@@ -1053,17 +1035,10 @@ global class SFDCAccessController {
         public SFDCAccessControlResults.InsertResults insertAsUser(SObject [] devObjs, List<String> fieldsToSet) {
             if (devObjs == null || devObjs.size() == 0 || fieldsToSet == null || fieldsToSet.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
-            
-            // Keep this check for now as stripInaccessible isn't correctly enforcing create object permissions
+
             Schema.SObjectType sObjectType = devObjs.getSObjectType();
             // Note: devObjs must be a Homogeneous list (all the same sObject type). Otherwise sObjectType will be null.
-            Schema.DescribeSObjectResult d = sObjectType.getDescribe();
-            if (d.isCreateable() == false) 
-                throw new SFDCAccessControlException('Access Violation', 
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
-                                                        SFDCAccessControlException.ExceptionReason.NO_CREATE,
-                                                        d.getName(),
-                                                        null);
+
             
             // Optimization by using the security stripping early to create the safe sObject List
             // Then we don't need to create and populate the new list. 
@@ -1097,16 +1072,6 @@ global class SFDCAccessController {
         public SFDCAccessControlResults.InsertResults insertAsUser(SObject [] devObjs, List<Schema.SObjectField> fieldsToSet) {
             if (devObjs == null || devObjs.size() == 0 || fieldsToSet == null || fieldsToSet.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
-            
-            // Keep this check for now as stripInaccessible isn't correctly enforcing create object permissions
-            Schema.SObjectType sObjectType = devObjs.getSObjectType();
-            Schema.DescribeSObjectResult d = sObjectType.getDescribe();
-            if (d.isCreateable() == false) 
-                throw new SFDCAccessControlException('Access Violation', 
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
-                                                        SFDCAccessControlException.ExceptionReason.NO_CREATE,
-                                                        d.getName(),
-                                                        null);
 
             // Passing fieldsToSetAsStrings in as a param so it doesn't need to be recreated for each sObject.
             Set<string> fieldsToSetAsStrings = fieldsToStringSetMaintainCase(fieldsToSet);
@@ -1149,15 +1114,6 @@ global class SFDCAccessController {
             if (devObj == null || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
             
-            // Keep this check for now as stripInaccessible isn't correctly enforcing update object permissions - Winter '20
-            Schema.DescribeSObjectResult d = devObj.getSObjectType().getDescribe();
-            if (d.isUpdateable() == false) 
-                throw new SFDCAccessControlException('Access Violation', 
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
-                                                        SFDCAccessControlException.ExceptionReason.NO_UPDATE,
-                                                        d.getName(),
-                                                        null);
-            
             // first load the existing object as current user (enforcing sharing based on sharing mode)
             // TODO: if the sharing mode is WITHOUT, then is there any advantage in burning a SOQL query to check if a record with the ID exists?
             // The dbUpdate call will determine that anyway.
@@ -1190,15 +1146,6 @@ global class SFDCAccessController {
         public SObject updateAsUser(SObject devObj, List<Schema.SObjectField> fieldsToUpdate) {
             if (devObj == null || fieldsToUpdate == null || fieldsToUpdate.size() == 0)
                 throw new AccessControlDmlException('null or empty parameter');
-            
-            // Keep this check for now as stripInaccessible isn't correctly enforcing update object permissions - Winter '20
-            Schema.DescribeSObjectResult d = devObj.getSObjectType().getDescribe();
-            if (d.isUpdateable() == false) 
-                throw new SFDCAccessControlException('Access Violation', 
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
-                                                        SFDCAccessControlException.ExceptionReason.NO_UPDATE,
-                                                        d.getName(),
-                                                        null);
                                                         
             // first load the existing object as current user (enforcing sharing based on sharing mode)
             SObject cleanObj = getObject(devObj);
@@ -1255,14 +1202,6 @@ global class SFDCAccessController {
             // Map<ID, sObject> sobjectMap = (Map<ID, sObject>)t.newInstance();
             // sobjectMap.putAll(devMap.values());
             // devMap = sobjectMap;
-            
-            // Keep this check for now as stripInaccessible isn't correctly enforcing update object permissions - Winter '20
-            if (d.isUpdateable() == false) 
-                throw new SFDCAccessControlException('Access Violation', 
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
-                                                        SFDCAccessControlException.ExceptionReason.NO_UPDATE,
-                                                        d.getName(),
-                                                        null);
                                                         
             // first load the existing objects as current user (enforcing sharing based on sharing mode)
             SObject [] cleanObjs = getObjects(devMap.values());
@@ -1313,16 +1252,6 @@ global class SFDCAccessController {
             // because, the user should be able to convert into map just using map.putAll(sobject_array). 
             // We can't do that because apex does not allow you to call putAll with a generic sObject value.
             // We also can't call put in a loop to add all objects, because we can't create a map with a generic
-            // sobject value (in apex v16)                  
-            
-            // Keep this check for now as stripInaccessible isn't correctly enforcing update object permissions - Winter '20
-            Schema.DescribeSObjectResult d = devMap.getSObjectType().getDescribe();
-            if (d.isUpdateable() == false) 
-                throw new SFDCAccessControlException('Access Violation', 
-                                                        SFDCAccessControlException.ExceptionType.OBJECT_ACCESS_VIOLATION, 
-                                                        SFDCAccessControlException.ExceptionReason.NO_UPDATE,
-                                                        d.getName(),
-                                                        null);
                                                         
             // first load the existing objects as current user (enforcing sharing based on sharing mode)
             SObject [] cleanObjs = getObjects(devMap.values());
