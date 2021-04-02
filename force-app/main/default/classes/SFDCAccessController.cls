@@ -831,6 +831,7 @@ global class SFDCAccessController {
             // check each field
             for (Schema.SObjectField f : fields) {
                 if (!f.getDescribe().isAccessible()){
+                    System.debug(LoggingLevel.WARN, 'isAuthorizedToView failed for '+someType+' on FLS: '+f);
                     return false;
                 }
             }
@@ -853,6 +854,7 @@ global class SFDCAccessController {
                                                             f);
                 }
                 if (!sObjectFld.getDescribe().isAccessible()){
+                    System.debug(LoggingLevel.WARN, 'isAuthorizedToView failed for '+someType+' on FLS: '+sObjectFld);
                     return false;
                 }
             }
@@ -868,6 +870,7 @@ global class SFDCAccessController {
             // check each field
             for (Schema.SObjectField f : fields) {
                 if (!f.getDescribe().isUpdateable()){
+                    System.debug(LoggingLevel.WARN, 'isAuthorizedToUpdate failed for '+someType+' on FLS: '+f);
                     return false;
                 }
             }
@@ -890,6 +893,7 @@ global class SFDCAccessController {
                                                             f);
                 }
                 if (!sObjectFld.getDescribe().isUpdateable()){
+                    System.debug(LoggingLevel.WARN, 'isAuthorizedToUpdate failed for '+someType+' on FLS: '+sObjectFld);
                     return false;
                 }
             }
@@ -950,6 +954,7 @@ global class SFDCAccessController {
                                                             f);
                 }
                 if (!sObjectFld.getDescribe().isCreateable()){
+                    System.debug(LoggingLevel.WARN, 'isAuthorizedToCreate failed for '+someType+' on FLS: '+SObjectFld);
                     return false;
                 }
             }
@@ -965,6 +970,7 @@ global class SFDCAccessController {
             // check each field
             for (Schema.SObjectField f : fields) {
                 if (!f.getDescribe().isCreateable()){
+                    System.debug(LoggingLevel.WARN, 'isAuthorizedToCreate failed for '+someType+' on FLS: '+f);
                     return false;
                 }
             }
