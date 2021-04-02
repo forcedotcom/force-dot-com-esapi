@@ -36,9 +36,10 @@
  * See the Apex Language Reference for more information about Testing and Code Coverage.
  */
 @isTest
+@SuppressWarnings('PMD.ClassNamingConventions') //historical
 private class testAccessController {
 
-	// Baseline Contact fields that will be accessible when using the ReadOnly profile and createFieldPermissions()
+	// Baseline Contact fields that will be accessible when using the Minimum Access - Salesforce profile and createFieldPermissions()
 	private static List<String> fieldsToCheck = new List<String>{'LastName','FirstName','Salutation','OtherStreet','OtherCity','OtherState','OtherPostalCode','OtherCountry','OtherLatitude','OtherLongitude','MailingStreet','MailingCity','MailingState','MailingPostalCode','MailingCountry','MailingLatitude','MailingLongitude','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','ReportsToId','Title','Department','AssistantName','LeadSource','Birthdate','Description','OwnerId','EmailBouncedReason','EmailBouncedDate', 'Email'};
 
 	static ObjectPermissions contactObjectReadPermission = new ObjectPermissions(SobjectType = 'Contact',
@@ -205,7 +206,7 @@ private class testAccessController {
 
 	static void runasProfileNoInsertSObject_Internal(boolean asCollection, boolean asSObjectField) {
 
-		User u = testReadOnlyProfileUser(false);
+		User u = testMinimumAccessProfileUser(false);
 
 		System.runAs(u) {
 			try {
@@ -276,7 +277,7 @@ private class testAccessController {
 															);	
 
 		boolean createReadWriteFieldPermissions = true;
-		User u = testReadOnlyProfileUser(true, contactObjectCreateEditReadPermission, createReadWriteFieldPermissions, new FieldPermissions[]{doNoCallFieldPermission} );
+		User u = testMinimumAccessProfileUser(true, contactObjectCreateEditReadPermission, createReadWriteFieldPermissions, new FieldPermissions[]{doNoCallFieldPermission} );
 
 		System.runAs(u) {
 			try {
@@ -362,7 +363,7 @@ private class testAccessController {
 															);	
 
 		boolean createReadWriteFieldPermissions = true;
-		User u = testReadOnlyProfileUser(true, contactObjectCreateEditReadPermission, createReadWriteFieldPermissions, new FieldPermissions[]{doNoCallFieldPermission} );
+		User u = testMinimumAccessProfileUser(true, contactObjectCreateEditReadPermission, createReadWriteFieldPermissions, new FieldPermissions[]{doNoCallFieldPermission} );
 
 		System.runAs(u) {
 			
@@ -454,7 +455,7 @@ private class testAccessController {
 															);	
 
 		boolean createReadWriteFieldPermissions = true;
-		User u = testReadOnlyProfileUser(true, contactObjectCreateEditReadPermission, createReadWriteFieldPermissions, new FieldPermissions[]{doNoCallFieldPermission} );
+		User u = testMinimumAccessProfileUser(true, contactObjectCreateEditReadPermission, createReadWriteFieldPermissions, new FieldPermissions[]{doNoCallFieldPermission} );
 
 		System.runAs(u) {
 			
@@ -586,7 +587,7 @@ private class testAccessController {
 															);	
 
 		boolean createReadWriteFieldPermissions = true;
-		User u = testReadOnlyProfileUser(true, contactObjectCreateEditReadPermission, createReadWriteFieldPermissions, new List<FieldPermissions>{doNotCallFieldPermission} );
+		User u = testMinimumAccessProfileUser(true, contactObjectCreateEditReadPermission, createReadWriteFieldPermissions, new List<FieldPermissions>{doNotCallFieldPermission} );
 
 		System.runAs(u) {
 			try {
@@ -768,7 +769,7 @@ private class testAccessController {
 	}
 
 	static void runasProfileNoUpdatesObject_Internal(boolean asCollection, boolean sObjectField) {
-		User u = testReadOnlyProfileUser(false);
+		User u = testMinimumAccessProfileUser(false);
 
 		System.runAs(u) {
 			try {
@@ -812,7 +813,7 @@ private class testAccessController {
 
 	@IsTest
 	static void noDeleteSObject() {
-		User u = testReadOnlyProfileUser(false);
+		User u = testMinimumAccessProfileUser(false);
 
 		System.runAs(u) {
 			try {
@@ -828,7 +829,7 @@ private class testAccessController {
 
 	@IsTest
 	static void noDeleteSObjects() {
-		User u = testReadOnlyProfileUser(false);
+		User u = testMinimumAccessProfileUser(false);
 
 		System.runAs(u) {
 			try {
@@ -866,7 +867,7 @@ private class testAccessController {
 	//#region isAuthorizedToView
 	@IsTest
 	static void runasProfileNotAuthorizedToViewSObject() {
-		User u = testReadOnlyProfileUser(true);
+		User u = testMinimumAccessProfileUser(true);
 
 		System.runAs(u) {
 			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
@@ -885,7 +886,7 @@ private class testAccessController {
 	@IsTest
 	static void runasProfileNotAuthorizedToViewSObjectField() {
 		boolean createReadWriteFieldPermissions = true;
-		User u = testReadOnlyProfileUser(true, contactObjectReadPermission, createReadWriteFieldPermissions, null);
+		User u = testMinimumAccessProfileUser(true, contactObjectReadPermission, createReadWriteFieldPermissions, null);
 
 		System.runAs(u) {
 			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
@@ -908,7 +909,7 @@ private class testAccessController {
 	@IsTest
 	static void runasProfileAuthorizedToViewSObjectField() {
 		boolean createReadWriteFieldPermissions = true;
-		User u = testReadOnlyProfileUser(true, contactObjectReadPermission, createReadWriteFieldPermissions, null);
+		User u = testMinimumAccessProfileUser(true, contactObjectReadPermission, createReadWriteFieldPermissions, null);
 
 		System.runAs(u) {
 			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
@@ -940,7 +941,7 @@ private class testAccessController {
 	@IsTest
 	static void runasProfileNotAuthorizedToCreateSObject() {
 		boolean createReadWriteFieldPermissions = true;
-		User u = testReadOnlyProfileUser(true, contactObjectReadPermission, createReadWriteFieldPermissions, null);
+		User u = testMinimumAccessProfileUser(true, contactObjectReadPermission, createReadWriteFieldPermissions, null);
 
 		System.runAs(u) {
 			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
@@ -957,7 +958,7 @@ private class testAccessController {
 	@IsTest
 	static void runasProfileAuthorizedToCreateSObject() {
 		boolean createReadWriteFieldPermissions = true;
-		User u = testReadOnlyProfileUser(true, contactObjectCreateReadPermission, createReadWriteFieldPermissions, null);
+		User u = testMinimumAccessProfileUser(true, contactObjectCreateReadPermission, createReadWriteFieldPermissions, null);
 
 		System.runAs(u) {
 			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
@@ -974,7 +975,7 @@ private class testAccessController {
 	@IsTest
 	static void runasProfileNotAuthorizedToCreateSObjectField() {
 		boolean createReadWriteFieldPermissions = true;
-		User u = testReadOnlyProfileUser(true, contactObjectCreateReadPermission, createReadWriteFieldPermissions, null);
+		User u = testMinimumAccessProfileUser(true, contactObjectCreateReadPermission, createReadWriteFieldPermissions, null);
 
 		System.runAs(u) {
 			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
@@ -1011,7 +1012,7 @@ private class testAccessController {
 	@IsTest
 	static void runasProfileNotAuthorizedToUpdateSObject() {
 		boolean createReadWriteFieldPermissions = true;
-		User u = testReadOnlyProfileUser(true, contactObjectReadPermission, createReadWriteFieldPermissions, null);
+		User u = testMinimumAccessProfileUser(true, contactObjectReadPermission, createReadWriteFieldPermissions, null);
 
 		System.runAs(u) {
 			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
@@ -1029,7 +1030,7 @@ private class testAccessController {
 	@IsTest
 	static void runasProfileAuthorizedToUpdateSObject() {
 		boolean createReadWriteFieldPermissions = true;
-		User u = testReadOnlyProfileUser(true, contactObjectEditReadPermission, createReadWriteFieldPermissions, null);
+		User u = testMinimumAccessProfileUser(true, contactObjectEditReadPermission, createReadWriteFieldPermissions, null);
 
 		System.runAs(u) {
 			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
@@ -1047,7 +1048,7 @@ private class testAccessController {
 	@IsTest
 	static void runasProfileNotAuthorizedToUpdateSObjectField() {
 		boolean createReadWriteFieldPermissions = true;
-		User u = testReadOnlyProfileUser(true, contactObjectEditReadPermission, createReadWriteFieldPermissions, null);
+		User u = testMinimumAccessProfileUser(true, contactObjectEditReadPermission, createReadWriteFieldPermissions, null);
 
 		System.runAs(u) {
 			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
@@ -1084,7 +1085,7 @@ private class testAccessController {
 	@IsTest
 	static void runasProfileNotAuthorizedToDeleteSObject() {
 		boolean createReadWriteFieldPermissions = false;
-		User u = testReadOnlyProfileUser(true, contactObjectReadPermission, createReadWriteFieldPermissions, null);
+		User u = testMinimumAccessProfileUser(true, contactObjectReadPermission, createReadWriteFieldPermissions, null);
 
 		System.runAs(u) {
 			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
@@ -1098,7 +1099,7 @@ private class testAccessController {
 	@IsTest
 	static void runasProfileAuthorizedToDeleteSObject() {
 		boolean createReadWriteFieldPermissions = false;
-		User u = testReadOnlyProfileUser(true, contactObjectDeleteEditReadPermission, createReadWriteFieldPermissions, null);
+		User u = testMinimumAccessProfileUser(true, contactObjectDeleteEditReadPermission, createReadWriteFieldPermissions, null);
 
 		System.runAs(u) {
 			ESAPI.accessController().setOperationMode(SFDCAccessController.OperationMode.ALL_OR_NONE);
@@ -1345,13 +1346,13 @@ private class testAccessController {
     	System.assert(arr.size() == max, 'testLimits');
     }
 
-	private static User testReadOnlyProfileUser(boolean insertRecord) {
-		return testReadOnlyProfileUser(false, null, false, null);
+	private static User testMinimumAccessProfileUser(boolean insertRecord) {
+		return testMinimumAccessProfileUser(false, null, false, null);
 	}
 
-	private static User testReadOnlyProfileUser(boolean insertRecord, ObjectPermissions contactObjectPermission, boolean createReadWriteFieldPermissions, List<FieldPermissions> additonalFieldPerms) {
+	private static User testMinimumAccessProfileUser(boolean insertRecord, ObjectPermissions contactObjectPermission, boolean createReadWriteFieldPermissions, List<FieldPermissions> additonalFieldPerms) {
 		// Built in System profile
-		Profile readOnlyProfileId = [SELECT Id FROM Profile WHERE Name='Read Only'];
+		Profile readOnlyProfileId = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
 
 		User u = new User(Alias = 'standt', Email='standarduser@esapi.com', 
             EmailEncodingKey='UTF-8', LastName='Testing', LanguageLocaleKey='en_US', 
@@ -1392,7 +1393,7 @@ private class testAccessController {
 
 		string sObjectType = 'Contact';
 
-		List<string> readWriteFields = new List<String>{'Account','Phone','Fax','MobilePhone','HomePhone','OtherPhone','AssistantPhone','Title','Department','AssistantName','LeadSource','Birthdate','Description'};
+		List<string> readWriteFields = new List<String>{'Account','Phone','Fax','Email','MobilePhone','HomePhone','OtherPhone','AssistantPhone','Title','Department','AssistantName','LeadSource','Birthdate','Description', 'ReportsTo'};
 		readWriteFields.add('OtherAddress');
 		readWriteFields.add('MailingAddress');
 
